@@ -7,6 +7,8 @@ const POLL_INTERVAL_MS = 3000;
 import { ApiError } from "@/lib/api";
 import { KnowledgeDoc, knowledgeApi } from "@/lib/knowledge";
 
+import { DashboardCard } from "./DashboardCard";
+
 const STATUS_STYLES: Record<KnowledgeDoc["status"], string> = {
   processing: "bg-amber-100 text-amber-800",
   ready: "bg-green-100 text-green-800",
@@ -68,10 +70,11 @@ export function KnowledgeBase() {
   }
 
   return (
-    <section className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Knowledge base</h2>
-        <label className="cursor-pointer text-sm underline">
+    <DashboardCard
+      accent="bg-amber-500"
+      title="Knowledge base"
+      action={
+        <label className="cursor-pointer whitespace-nowrap text-sm text-indigo-600 hover:text-indigo-700">
           {uploading ? "Uploading..." : "+ Upload manual (.pdf, .txt)"}
           <input
             ref={fileInputRef}
@@ -82,7 +85,8 @@ export function KnowledgeBase() {
             className="hidden"
           />
         </label>
-      </div>
+      }
+    >
       {error && <p className="text-sm text-red-600">{error}</p>}
       {docs.length === 0 ? (
         <p className="text-sm text-neutral-500">
@@ -119,6 +123,6 @@ export function KnowledgeBase() {
           ))}
         </ul>
       )}
-    </section>
+    </DashboardCard>
   );
 }

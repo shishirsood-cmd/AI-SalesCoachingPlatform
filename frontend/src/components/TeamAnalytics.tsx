@@ -6,6 +6,7 @@ import { ApiError } from "@/lib/api";
 import { TeamAnalytics as TeamAnalyticsData, analyticsApi } from "@/lib/analytics";
 import { scoreColor } from "@/lib/scoreColor";
 
+import { DashboardCard } from "./DashboardCard";
 import { ScoreRow } from "./ScoreRow";
 
 export function TeamAnalytics() {
@@ -24,30 +25,30 @@ export function TeamAnalytics() {
 
   if (data.total_evaluated_sessions === 0) {
     return (
-      <section className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold">Team analytics</h2>
+      <DashboardCard accent="bg-emerald-600" title="Team analytics">
         <p className="text-sm text-neutral-500">
           No completed, scored calls yet — once reps finish practice calls, team-wide performance
           shows up here.
         </p>
-      </section>
+      </DashboardCard>
     );
   }
 
   return (
-    <section className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Team analytics</h2>
-        {data.average_score !== null && (
-          <span className={`text-lg font-bold ${scoreColor(data.average_score)}`}>
+    <DashboardCard
+      accent="bg-emerald-600"
+      title="Team analytics"
+      action={
+        data.average_score !== null && (
+          <span className={`whitespace-nowrap text-lg font-bold ${scoreColor(data.average_score)}`}>
             {Math.round(data.average_score)}
             <span className="text-xs font-normal text-neutral-400">
-              /100 avg &middot; {data.total_evaluated_sessions} calls scored
+              /100 avg &middot; {data.total_evaluated_sessions} scored
             </span>
           </span>
-        )}
-      </div>
-
+        )
+      }
+    >
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         <div className="flex flex-col gap-3">
           <h3 className="text-sm font-semibold text-neutral-700">Weakest skills</h3>
@@ -75,6 +76,6 @@ export function TeamAnalytics() {
           <ScoreRow key={s.scenario_id} label={s.title} sublabel={`${s.attempts} attempts`} score={s.average_score} />
         ))}
       </div>
-    </section>
+    </DashboardCard>
   );
 }

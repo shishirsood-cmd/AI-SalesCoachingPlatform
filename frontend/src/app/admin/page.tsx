@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { DashboardCard } from "@/components/DashboardCard";
 import { InviteCode } from "@/components/InviteCode";
 import { KnowledgeBase } from "@/components/KnowledgeBase";
 import { RoleGuard } from "@/components/RoleGuard";
@@ -33,15 +34,18 @@ export default function AdminPage() {
   return (
     <RoleGuard allow={["team_lead"]}>
       {(user) => (
-        <main className="mx-auto flex min-h-screen max-w-3xl flex-col gap-8 px-4 py-12">
+        <main className="mx-auto flex min-h-screen w-full max-w-3xl flex-col gap-6 bg-neutral-50 px-4 py-12">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold">Team Lead Dashboard</h1>
+            <h1 className="flex items-center gap-2 text-2xl font-semibold">
+              <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-indigo-600 to-amber-500" />
+              Team Lead Dashboard
+            </h1>
             <button
               onClick={() => {
                 logout();
                 router.push("/login");
               }}
-              className="text-sm underline"
+              className="text-sm text-neutral-500 hover:text-neutral-900"
             >
               Log out
             </button>
@@ -50,13 +54,18 @@ export default function AdminPage() {
 
           <InviteCode />
 
-          <section className="flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Scenarios</h2>
-              <Link href="/admin/scenarios/new" className="text-sm underline">
+          <DashboardCard
+            accent="bg-violet-600"
+            title="Scenarios"
+            action={
+              <Link
+                href="/admin/scenarios/new"
+                className="whitespace-nowrap text-sm text-indigo-600 hover:text-indigo-700"
+              >
                 + New scenario
               </Link>
-            </div>
+            }
+          >
             {error && <p className="text-sm text-red-600">{error}</p>}
             {scenarios.length === 0 ? (
               <p className="text-sm text-neutral-500">
@@ -68,7 +77,7 @@ export default function AdminPage() {
                   <li key={s.id}>
                     <Link
                       href={`/admin/scenarios/${s.id}`}
-                      className="flex items-center justify-between rounded border border-neutral-200 px-3 py-2 hover:border-neutral-400"
+                      className="flex items-center justify-between rounded border border-neutral-200 px-3 py-2 hover:border-violet-300"
                     >
                       <div>
                         <p className="text-sm font-medium">{s.title}</p>
@@ -85,7 +94,7 @@ export default function AdminPage() {
                 ))}
               </ul>
             )}
-          </section>
+          </DashboardCard>
 
           <TeamAnalytics />
 

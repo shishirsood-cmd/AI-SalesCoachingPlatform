@@ -6,6 +6,8 @@ import { ApiError } from "@/lib/api";
 import { Organization } from "@/lib/auth";
 import { organizationsApi } from "@/lib/organizations";
 
+import { DashboardCard } from "./DashboardCard";
+
 export function InviteCode() {
   const [org, setOrg] = useState<Organization | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -47,20 +49,23 @@ export function InviteCode() {
   if (!org) return null;
 
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="text-lg font-semibold">Invite reps</h2>
+    <DashboardCard accent="bg-indigo-600" title="Invite reps">
       <p className="text-sm text-neutral-600">
         Share this code with sales reps so they can sign up under {org.name}.
       </p>
       <div className="flex items-center gap-2">
         <code className="rounded bg-neutral-100 px-3 py-2 font-mono text-lg">{org.invite_code}</code>
-        <button onClick={handleCopy} className="text-sm underline">
+        <button onClick={handleCopy} className="text-sm text-indigo-600 hover:text-indigo-700">
           {copied ? "Copied!" : "Copy"}
         </button>
-        <button onClick={handleRotate} disabled={rotating} className="text-sm underline disabled:opacity-50">
+        <button
+          onClick={handleRotate}
+          disabled={rotating}
+          className="text-sm text-indigo-600 hover:text-indigo-700 disabled:opacity-50"
+        >
           {rotating ? "Generating..." : "Generate new code"}
         </button>
       </div>
-    </section>
+    </DashboardCard>
   );
 }
