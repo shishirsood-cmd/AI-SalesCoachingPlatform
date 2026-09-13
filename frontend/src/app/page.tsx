@@ -10,14 +10,17 @@ const STEPS = [
   {
     title: "Build the scenario",
     body: "Team leads write the customer persona and objections, set the evaluation rubric, and upload product manuals to ground the AI in real facts.",
+    accent: "bg-indigo-600",
   },
   {
     title: "Practice the call",
     body: "Reps have a real voice conversation with an AI customer that raises objections naturally and references the uploaded product docs when it's relevant.",
+    accent: "bg-amber-500",
   },
   {
     title: "Get scored, improve",
     body: "Every call ends with a scorecard: an overall score, per-criterion feedback tied to what was actually said, and clear next steps.",
+    accent: "bg-emerald-600",
   },
 ];
 
@@ -40,7 +43,8 @@ export default function Home() {
   return (
     <main className="flex flex-1 flex-col">
       <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-6">
-        <span className="whitespace-nowrap text-base font-semibold tracking-tight sm:text-lg">
+        <span className="flex items-center gap-2 whitespace-nowrap text-base font-semibold tracking-tight sm:text-lg">
+          <span className="h-2.5 w-2.5 rounded-full bg-gradient-to-br from-indigo-600 to-amber-500" />
           Sales Coaching Platform
         </span>
         <nav className="flex shrink-0 items-center gap-3 text-sm sm:gap-6">
@@ -49,43 +53,60 @@ export default function Home() {
           </Link>
           <Link
             href="/register-org"
-            className="whitespace-nowrap rounded bg-neutral-900 px-3 py-2 font-medium text-white hover:bg-neutral-800 sm:px-4"
+            className="whitespace-nowrap rounded bg-indigo-600 px-3 py-2 font-medium text-white transition-colors hover:bg-indigo-700 sm:px-4"
           >
             Get started
           </Link>
         </nav>
       </header>
 
-      <section className="mx-auto flex w-full max-w-3xl flex-col items-center gap-6 px-6 py-20 text-center">
-        <h1 className="text-4xl font-semibold tracking-tight text-neutral-900 sm:text-5xl">
-          Get new reps closing deals faster
-        </h1>
-        <p className="max-w-2xl text-lg text-neutral-600">
-          Practice sales calls with an AI customer that objects, pushes back, and remembers the
-          conversation — grounded in your own product docs. Every call ends with specific,
-          evidence-based feedback against the rubric your team defines.
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-3">
-          <Link
-            href="/register-org"
-            className="rounded bg-neutral-900 px-5 py-3 text-sm font-medium text-white hover:bg-neutral-800"
-          >
-            Set up your organization
-          </Link>
-          <Link
-            href="/signup"
-            className="rounded border border-neutral-300 px-5 py-3 text-sm font-medium text-neutral-700 hover:border-neutral-400"
-          >
-            Join with an invite code
-          </Link>
+      <section className="relative overflow-hidden">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[560px] bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,var(--color-indigo-100),transparent_70%)]"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute -right-24 top-24 -z-10 h-72 w-72 rounded-full bg-amber-100 opacity-60 blur-3xl"
+        />
+        <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-6 px-6 py-20 text-center">
+          <span className="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-200">
+            AI-powered sales coaching
+          </span>
+          <h1 className="text-4xl font-semibold tracking-tight text-neutral-900 sm:text-5xl">
+            Get new reps closing deals faster
+          </h1>
+          <p className="max-w-2xl text-lg text-neutral-600">
+            Practice sales calls with an AI customer that objects, pushes back, and remembers the
+            conversation — grounded in your own product docs. Every call ends with specific,
+            evidence-based feedback against the rubric your team defines.
+          </p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/register-org"
+              className="rounded bg-indigo-600 px-5 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
+            >
+              Set up your organization
+            </Link>
+            <Link
+              href="/signup"
+              className="rounded border border-neutral-300 px-5 py-3 text-sm font-medium text-neutral-700 transition-colors hover:border-neutral-400"
+            >
+              Join with an invite code
+            </Link>
+          </div>
         </div>
       </section>
 
       <section className="border-t border-neutral-100 bg-neutral-50">
         <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-10 px-6 py-16 sm:grid-cols-3">
           {STEPS.map((step, i) => (
-            <div key={step.title} className="flex flex-col gap-2">
-              <span className="text-sm font-medium text-neutral-400">{`0${i + 1}`}</span>
+            <div key={step.title} className="flex flex-col gap-3">
+              <span
+                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold text-white ${step.accent}`}
+              >
+                {i + 1}
+              </span>
               <h2 className="text-lg font-semibold text-neutral-900">{step.title}</h2>
               <p className="text-sm text-neutral-600">{step.body}</p>
             </div>
@@ -94,8 +115,9 @@ export default function Home() {
       </section>
 
       <section className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-8 px-6 py-16 sm:grid-cols-2">
-        <div className="flex flex-col gap-3 rounded border border-neutral-200 p-6">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-neutral-400">
+        <div className="flex flex-col gap-3 overflow-hidden rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
+          <div className="h-1.5 w-10 rounded-full bg-indigo-600" />
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-indigo-700">
             For team leads
           </h3>
           <p className="text-neutral-700">
@@ -104,8 +126,9 @@ export default function Home() {
             scenario, and by skill.
           </p>
         </div>
-        <div className="flex flex-col gap-3 rounded border border-neutral-200 p-6">
-          <h3 className="text-sm font-semibold uppercase tracking-wide text-neutral-400">
+        <div className="flex flex-col gap-3 overflow-hidden rounded-lg border border-neutral-200 bg-white p-6 shadow-sm">
+          <div className="h-1.5 w-10 rounded-full bg-amber-500" />
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-amber-700">
             For sales reps
           </h3>
           <p className="text-neutral-700">
