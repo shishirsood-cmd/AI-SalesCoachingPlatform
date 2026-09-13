@@ -113,17 +113,17 @@ export default function PracticeSessionPage() {
   return (
     <RoleGuard allow={["sales_rep"]}>
       {() => (
-        <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-4 px-4 py-8">
+        <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-4 bg-neutral-50 px-4 py-8">
           <audio ref={audioRef} className="hidden" />
           <div className="flex items-center justify-between">
-            <Link href="/practice" className="text-sm underline">
+            <Link href="/practice" className="text-sm text-indigo-600 hover:text-indigo-700">
               &larr; Back to scenarios
             </Link>
             {session?.status === "active" && (
               <button
                 onClick={handleEnd}
                 disabled={ending}
-                className="text-sm text-red-600 underline disabled:opacity-50"
+                className="text-sm text-red-600 hover:text-red-700 disabled:opacity-50"
               >
                 {ending ? "Ending..." : "End call"}
               </button>
@@ -143,13 +143,13 @@ export default function PracticeSessionPage() {
                 </p>
               )}
 
-              <div className="flex max-h-96 flex-col gap-3 overflow-y-auto rounded border border-neutral-200 p-4">
+              <div className="flex max-h-96 flex-col gap-3 overflow-y-auto rounded border border-neutral-200 bg-white p-4">
                 {session.turns.map((turn) => (
                   <div
                     key={turn.id}
                     className={`max-w-[80%] rounded px-3 py-2 text-sm ${
                       turn.speaker === "rep"
-                        ? "self-end bg-neutral-900 text-white"
+                        ? "self-end bg-indigo-600 text-white"
                         : "self-start bg-neutral-100 text-neutral-900"
                     }`}
                   >
@@ -165,7 +165,7 @@ export default function PracticeSessionPage() {
                     onClick={micStatus === "recording" ? stopRecording : startRecording}
                     disabled={micStatus === "processing"}
                     className={`rounded px-4 py-3 text-sm font-medium text-white disabled:opacity-50 ${
-                      micStatus === "recording" ? "bg-red-600" : "bg-neutral-900"
+                      micStatus === "recording" ? "bg-red-600" : "bg-indigo-600 hover:bg-indigo-700"
                     }`}
                   >
                     {micStatus === "recording"
@@ -181,12 +181,12 @@ export default function PracticeSessionPage() {
                       onChange={(e) => setDraft(e.target.value)}
                       placeholder="...or type your response"
                       disabled={sending}
-                      className="flex-1 rounded border border-neutral-300 px-3 py-2 text-sm"
+                      className="flex-1 rounded border border-neutral-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     />
                     <button
                       type="submit"
                       disabled={sending || !draft.trim()}
-                      className="rounded bg-neutral-100 px-4 py-2 text-sm disabled:opacity-50"
+                      className="rounded bg-indigo-50 px-4 py-2 text-sm text-indigo-700 hover:bg-indigo-100 disabled:opacity-50"
                     >
                       {sending ? "..." : "Send"}
                     </button>
@@ -204,7 +204,7 @@ export default function PracticeSessionPage() {
 
                   <button
                     onClick={() => router.push("/practice")}
-                    className="self-start rounded bg-neutral-900 px-4 py-2 text-sm text-white"
+                    className="self-start rounded bg-indigo-600 px-4 py-2 text-sm text-white hover:bg-indigo-700"
                   >
                     Practice another scenario
                   </button>
