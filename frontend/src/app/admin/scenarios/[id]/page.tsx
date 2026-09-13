@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { DashboardCard } from "@/components/DashboardCard";
 import { RoleGuard } from "@/components/RoleGuard";
 import { ScenarioForm } from "@/components/ScenarioForm";
 import { ApiError } from "@/lib/api";
@@ -38,32 +39,36 @@ export default function EditScenarioPage() {
   return (
     <RoleGuard allow={["team_lead"]}>
       {() => (
-        <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 px-4 py-12">
-          <div className="flex items-center justify-between">
-            <Link href="/admin" className="text-sm underline">
+        <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 bg-neutral-50 px-4 py-12">
+          <div>
+            <Link href="/admin" className="text-sm text-indigo-600 hover:text-indigo-700">
               &larr; Back to dashboard
             </Link>
-            {scenario && (
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="text-sm text-red-600 underline disabled:opacity-50"
-              >
-                {deleting ? "Deleting..." : "Delete scenario"}
-              </button>
-            )}
           </div>
-          <h1 className="text-2xl font-semibold">Edit scenario</h1>
           {error && <p className="text-sm text-red-600">{error}</p>}
           {scenario ? (
-            <ScenarioForm
-              initial={scenario}
-              submitLabel="Save changes"
-              onSubmit={async (input) => {
-                await scenariosApi.update(params.id, input);
-                router.push("/admin");
-              }}
-            />
+            <DashboardCard
+              accent="bg-violet-600"
+              title="Edit scenario"
+              action={
+                <button
+                  onClick={handleDelete}
+                  disabled={deleting}
+                  className="whitespace-nowrap text-sm text-red-600 hover:text-red-700 disabled:opacity-50"
+                >
+                  {deleting ? "Deleting..." : "Delete scenario"}
+                </button>
+              }
+            >
+              <ScenarioForm
+                initial={scenario}
+                submitLabel="Save changes"
+                onSubmit={async (input) => {
+                  await scenariosApi.update(params.id, input);
+                  router.push("/admin");
+                }}
+              />
+            </DashboardCard>
           ) : (
             !error && <p className="text-sm text-neutral-500">Loading...</p>
           )}

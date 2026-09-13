@@ -75,7 +75,7 @@ export function ScenarioForm({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
-          className="rounded border border-neutral-300 px-3 py-2"
+          className="rounded border border-neutral-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
         />
       </div>
 
@@ -87,7 +87,7 @@ export function ScenarioForm({
           required
           rows={3}
           placeholder="Who is the AI playing? Personality, role, industry, prior context..."
-          className="rounded border border-neutral-300 px-3 py-2"
+          className="rounded border border-neutral-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
         />
       </div>
 
@@ -97,7 +97,7 @@ export function ScenarioForm({
           <select
             value={difficulty}
             onChange={(e) => setDifficulty(e.target.value as Difficulty)}
-            className="rounded border border-neutral-300 px-3 py-2"
+            className="rounded border border-neutral-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           >
             <option value="easy">Easy</option>
             <option value="medium">Medium</option>
@@ -109,7 +109,7 @@ export function ScenarioForm({
           <select
             value={callType}
             onChange={(e) => setCallType(e.target.value as CallType)}
-            className="rounded border border-neutral-300 px-3 py-2"
+            className="rounded border border-neutral-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
           >
             <option value="cold_call">Cold call</option>
             <option value="support">Support</option>
@@ -125,7 +125,7 @@ export function ScenarioForm({
               value={o}
               onChange={(e) => updateObjection(i, e.target.value)}
               placeholder="e.g. We don't have budget this quarter"
-              className="flex-1 rounded border border-neutral-300 px-3 py-2"
+              className="flex-1 rounded border border-neutral-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
             <button
               type="button"
@@ -139,7 +139,7 @@ export function ScenarioForm({
         <button
           type="button"
           onClick={() => setObjections((prev) => [...prev, ""])}
-          className="self-start text-sm underline"
+          className="self-start text-sm text-indigo-600 hover:text-indigo-700"
         >
           + Add objection
         </button>
@@ -159,14 +159,14 @@ export function ScenarioForm({
                 value={c.name}
                 onChange={(e) => updateCriterion(i, "name", e.target.value)}
                 placeholder="Criterion name (e.g. Empathy)"
-                className="flex-1 rounded border border-neutral-300 px-3 py-2"
+                className="flex-1 rounded border border-neutral-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
               <input
                 type="number"
                 value={c.weight}
                 onChange={(e) => updateCriterion(i, "weight", e.target.value)}
                 placeholder="Weight %"
-                className="w-24 rounded border border-neutral-300 px-3 py-2"
+                className="w-24 rounded border border-neutral-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
               <button
                 type="button"
@@ -180,14 +180,14 @@ export function ScenarioForm({
               value={c.description}
               onChange={(e) => updateCriterion(i, "description", e.target.value)}
               placeholder="What does scoring well on this look like?"
-              className="rounded border border-neutral-300 px-3 py-2"
+              className="rounded border border-neutral-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             />
           </div>
         ))}
         <button
           type="button"
           onClick={() => setCriteria((prev) => [...prev, { ...emptyCriterion }])}
-          className="self-start text-sm underline"
+          className="self-start text-sm text-indigo-600 hover:text-indigo-700"
         >
           + Add criterion
         </button>
@@ -198,7 +198,7 @@ export function ScenarioForm({
       <button
         type="submit"
         disabled={submitting}
-        className="self-start rounded bg-neutral-900 px-4 py-2 text-white disabled:opacity-50"
+        className="self-start rounded bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-50"
       >
         {submitting ? "Saving..." : submitLabel}
       </button>
