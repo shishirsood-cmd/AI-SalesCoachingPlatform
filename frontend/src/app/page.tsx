@@ -39,17 +39,19 @@ export default function Home() {
 
   return (
     <main className="flex flex-1 flex-col">
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-6 py-6">
-        <span className="text-lg font-semibold tracking-tight">Sales Coaching Platform</span>
-        <nav className="flex items-center gap-6 text-sm">
-          <Link href="/login" className="text-neutral-600 hover:text-neutral-900">
+      <header className="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-4 sm:px-6 sm:py-6">
+        <span className="whitespace-nowrap text-base font-semibold tracking-tight sm:text-lg">
+          Sales Coaching Platform
+        </span>
+        <nav className="flex shrink-0 items-center gap-3 text-sm sm:gap-6">
+          <Link href="/login" className="whitespace-nowrap text-neutral-600 hover:text-neutral-900">
             Log in
           </Link>
           <Link
             href="/register-org"
-            className="rounded bg-neutral-900 px-4 py-2 font-medium text-white hover:bg-neutral-800"
+            className="whitespace-nowrap rounded bg-neutral-900 px-3 py-2 font-medium text-white hover:bg-neutral-800 sm:px-4"
           >
-            Set up your organization
+            Get started
           </Link>
         </nav>
       </header>
