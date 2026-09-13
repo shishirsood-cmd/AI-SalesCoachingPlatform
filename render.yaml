@@ -22,7 +22,7 @@ services:
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: "720"
       - key: CORS_ORIGINS
-        value: '["http://localhost:3000"]'
+        value: '["https://ai-sales-coaching-platform.vercel.app","http://localhost:3000"]'
       - key: CLAUDE_MODEL
         value: claude-sonnet-5
       - key: ELEVENLABS_VOICE_ID
