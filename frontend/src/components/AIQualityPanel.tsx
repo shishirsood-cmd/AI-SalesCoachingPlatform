@@ -93,6 +93,66 @@ export function AIQualityPanel({
               </p>
             </div>
           </div>
+
+          <div className="grid grid-cols-2 gap-3 rounded border border-neutral-100 bg-neutral-50 p-3 text-sm text-neutral-600 sm:grid-cols-4">
+            <div>
+              <p className="text-xs text-neutral-400">Call duration</p>
+              <p className="font-medium text-neutral-800">
+                {evals.transcript_analysis.scores.call_duration.seconds !== null
+                  ? `${evals.transcript_analysis.scores.call_duration.seconds}s`
+                  : "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-neutral-400">Turns</p>
+              <p className="font-medium text-neutral-800">
+                {evals.transcript_analysis.scores.turn_counts.rep_turns} rep /{" "}
+                {evals.transcript_analysis.scores.turn_counts.ai_turns} customer
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-neutral-400">Questions asked (rep)</p>
+              <p className="font-medium text-neutral-800">
+                {evals.transcript_analysis.scores.question_rate.questions_asked} (
+                {evals.transcript_analysis.scores.question_rate.per_turn}/turn)
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-neutral-400">Rep response length</p>
+              <p className="font-medium text-neutral-800">
+                {evals.transcript_analysis.scores.rep_turn_length.average_words}w avg /{" "}
+                {evals.transcript_analysis.scores.rep_turn_length.longest_words}w longest
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-neutral-400">Rep response latency</p>
+              <p className="font-medium text-neutral-800">
+                {evals.transcript_analysis.scores.response_latency.average_seconds !== null
+                  ? `${evals.transcript_analysis.scores.response_latency.average_seconds}s avg`
+                  : "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-neutral-400">Objections raised</p>
+              <p className="font-medium text-neutral-800">
+                {evals.transcript_analysis.scores.objection_coverage.raised_count}/
+                {evals.transcript_analysis.scores.objection_coverage.configured_count}
+              </p>
+            </div>
+            <div className="col-span-2">
+              <p className="text-xs text-neutral-400">Customer name usage</p>
+              <p className="font-medium text-neutral-800">
+                {evals.transcript_analysis.scores.customer_name_usage.customer_name_detected
+                  ? `"${evals.transcript_analysis.scores.customer_name_usage.customer_name_detected}" — ${
+                      evals.transcript_analysis.scores.customer_name_usage.used_by_rep
+                        ? "used by rep"
+                        : "not used by rep"
+                    }`
+                  : "Not detected"}
+              </p>
+            </div>
+          </div>
+
           <ScoreRow
             label="Scorecard covered talk-time accurately"
             score={evals.transcript_analysis.scores.talk_time_coverage_score}

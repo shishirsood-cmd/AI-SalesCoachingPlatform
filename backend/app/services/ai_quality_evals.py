@@ -7,12 +7,24 @@ import anthropic
 from app.core.config import settings
 from app.models.evaluation import Evaluation
 from app.models.scenario import Scenario
-from app.models.session import Speaker, Turn
+from app.models.session import SimulationSession, Speaker, Turn
 from app.services.anthropic_client import get_client
 
 FILLER_WORDS = [
     "um", "umm", "uh", "uhh", "like", "you know", "i mean", "actually",
     "basically", "sort of", "kind of", "so yeah",
+]
+
+_STOPWORDS = {
+    "a", "an", "the", "is", "are", "was", "were", "this", "that", "i", "you", "your", "we",
+    "our", "to", "of", "in", "on", "for", "and", "or", "but", "it", "with", "at", "as", "be",
+    "have", "has", "do", "does", "did", "not", "no", "so", "if", "just",
+}
+
+_NAME_PATTERNS = [
+    re.compile(r"\bthis is ([A-Z][a-z]+)\b"),
+    re.compile(r"\bi'?m ([A-Z][a-z]+)\b"),
+    re.compile(r"\bmy name is ([A-Z][a-z]+)\b", re.IGNORECASE),
 ]
 
 
@@ -46,6 +58,103 @@ def compute_filler_word_count(turns: list[Turn]) -> dict[str, Any]:
         "by_word": dict(counts),
         "per_100_words": round(100 * total / rep_word_count, 2),
     }
+
+
+def compute_call_duration(session: SimulationSession) -> dict[str, Any]:
+    if session.ended_at is None:
+        return {"seconds": None, "note": "Call not yet ended."}
+    return {"seconds": round((session.ended_at - session.started_at).total_seconds(), 1)}
+
+
+def compute_turn_counts(turns: list[Turn]) -> dict[str, Any]:
+    rep = sum(1 for t in turns if t.speaker == Speaker.rep)
+    ai = sum(1 for t in turns if t.speaker == Speaker.ai_customer)
+    return {"rep_turns": rep, "ai_turns": ai, "total_turns": rep + ai}
+
+
+def compute_question_rate(turns: list[Turn]) -> dict[str, Any]:
+    rep_turns = [t for t in turns if t.speaker == Speaker.rep]
+    if not rep_turns:
+        return {"questions_asked": 0, "rep_turns": 0, "per_turn": 0.0}
+    questions = sum(t.content.count("?") for t in rep_turns)
+    return {
+        "questions_asked": questions,
+        "rep_turns": len(rep_turns),
+        "per_turn": round(questions / len(rep_turns), 2),
+    }
+
+
+def compute_rep_turn_length_stats(turns: list[Turn]) -> dict[str, Any]:
+    rep_word_counts = [len(t.content.split()) for t in turns if t.speaker == Speaker.rep]
+    if not rep_word_counts:
+        return {"average_words": 0.0, "longest_words": 0, "rep_turns": 0}
+    return {
+        "average_words": round(sum(rep_word_counts) / len(rep_word_counts), 1),
+        "longest_words": max(rep_word_counts),
+        "rep_turns": len(rep_word_counts),
+    }
+
+
+def compute_response_latency(turns: list[Turn]) -> dict[str, Any]:
+    """Time between the AI customer's turn and the rep's next turn. For voice calls this
+    includes speech-to-text processing time, not pure think-time — a noisier signal than
+    the other metrics here."""
+    deltas = []
+    for prev, curr in zip(turns, turns[1:]):
+        if prev.speaker == Speaker.ai_customer and curr.speaker == Speaker.rep:
+            delta = (curr.created_at - prev.created_at).total_seconds()
+            if delta >= 0:
+                deltas.append(delta)
+    if not deltas:
+        return {"average_seconds": None, "samples": 0}
+    return {"average_seconds": round(sum(deltas) / len(deltas), 1), "samples": len(deltas)}
+
+
+def _significant_words(text: str) -> set[str]:
+    words = re.findall(r"[a-z']+", text.lower())
+    return {w for w in words if w not in _STOPWORDS and len(w) > 2}
+
+
+def compute_objection_coverage(scenario_objections: list[str], turns: list[Turn]) -> dict[str, Any]:
+    """Approximate match: an objection counts as "raised" if at least half of its
+    significant (non-stopword) words appear somewhere in the AI customer's turns. This is
+    a deterministic heuristic, not semantic understanding — paraphrased objections with
+    mostly different wording may be missed."""
+    ai_text = " ".join(t.content for t in turns if t.speaker == Speaker.ai_customer).lower()
+    raised = []
+    for objection in scenario_objections:
+        sig = _significant_words(objection)
+        if not sig:
+            continue
+        matched = sum(1 for w in sig if w in ai_text)
+        if matched / len(sig) >= 0.5:
+            raised.append(objection)
+    return {
+        "configured_count": len(scenario_objections),
+        "raised_count": len(raised),
+        "raised": raised,
+        "note": "Approximate word-overlap match, not semantic — may miss heavily paraphrased objections.",
+    }
+
+
+def compute_customer_name_usage(turns: list[Turn]) -> dict[str, Any]:
+    ai_turns = [t for t in turns if t.speaker == Speaker.ai_customer]
+    name = None
+    if ai_turns:
+        for pattern in _NAME_PATTERNS:
+            match = pattern.search(ai_turns[0].content)
+            if match:
+                name = match.group(1)
+                break
+    if not name:
+        return {
+            "customer_name_detected": None,
+            "used_by_rep": None,
+            "note": "Could not reliably extract a customer name from the AI's opening line.",
+        }
+    rep_text = " ".join(t.content for t in turns if t.speaker == Speaker.rep)
+    used = bool(re.search(r"\b" + re.escape(name) + r"\b", rep_text, re.IGNORECASE))
+    return {"customer_name_detected": name, "used_by_rep": used}
 
 
 def _extract_tool_input(response: Any) -> dict[str, Any]:
@@ -104,16 +213,23 @@ Areas for improvement: {"; ".join(evaluation.areas_for_improvement)}"""
 
 
 async def run_transcript_analysis(
-    scenario: Scenario, turns: list[Turn], evaluation: Evaluation
+    scenario: Scenario, turns: list[Turn], evaluation: Evaluation, session: SimulationSession
 ) -> tuple[dict[str, Any], str]:
     """Audits the *Call Scorecard* (the rubric-based Evaluation Claude already produced for the
-    rep) for whether it accurately and completely reflects four transcript-level signals — this
-    does not re-grade the rep independently. Talk-time and filler-word counts are computed
-    deterministically in code; whether the scorecard *appropriately accounted for* them, and
-    whether its objection-handling and framework-adherence assessments are accurate, is judged
-    by Claude against the actual transcript."""
+    rep) for whether it accurately and completely reflects transcript-level signals — this does
+    not re-grade the rep independently. All metrics below are computed deterministically in code
+    (no LLM judgment, so no cost or flakiness); whether the scorecard *appropriately accounted
+    for* the core ones, and whether its objection-handling and framework-adherence assessments
+    are accurate, is judged by Claude against the actual transcript."""
     talk_time = compute_talk_time_ratio(turns)
     fillers = compute_filler_word_count(turns)
+    call_duration = compute_call_duration(session)
+    turn_counts = compute_turn_counts(turns)
+    question_rate = compute_question_rate(turns)
+    turn_length = compute_rep_turn_length_stats(turns)
+    response_latency = compute_response_latency(turns)
+    objection_coverage = compute_objection_coverage(scenario.objections, turns)
+    name_usage = compute_customer_name_usage(turns)
     scorecard_text = _build_scorecard_text(evaluation)
 
     properties: dict[str, Any] = {
@@ -192,6 +308,17 @@ COMPUTED METRICS (ground truth to check the scorecard against — do not recompu
 - Filler words used by the rep: {fillers["total"]} total, {fillers["per_100_words"]} per 100 words \
 ({fillers["by_word"] or "none detected"})
 
+ADDITIONAL COMPUTED METRICS (context only, not separately scored — mention in your notes only if \
+directly relevant to something the scorecard got wrong or missed):
+- Call duration: {call_duration["seconds"]} seconds
+- Turns: {turn_counts["rep_turns"]} rep, {turn_counts["ai_turns"]} customer
+- Rep questions asked: {question_rate["questions_asked"]} ({question_rate["per_turn"]} per rep turn)
+- Rep response length: {turn_length["average_words"]} words average, {turn_length["longest_words"]} words longest
+- Rep response latency: {response_latency["average_seconds"]} seconds average
+- Configured objections actually raised by the AI customer: {objection_coverage["raised_count"]}/\
+{objection_coverage["configured_count"]}
+- Customer name usage: {"detected name '" + name_usage["customer_name_detected"] + "', used by rep: " + str(name_usage["used_by_rep"]) if name_usage["customer_name_detected"] else "no name reliably detected"}
+
 SCENARIO: {scenario.title}
 CONFIGURED OBJECTIONS: {", ".join(scenario.objections) or "none specified"}
 
@@ -206,6 +333,13 @@ CALL SCORECARD TO AUDIT (this is what the rep was actually shown — judge its a
     scores = {
         "talk_time_ratio": talk_time,
         "filler_words": fillers,
+        "call_duration": call_duration,
+        "turn_counts": turn_counts,
+        "question_rate": question_rate,
+        "rep_turn_length": turn_length,
+        "response_latency": response_latency,
+        "objection_coverage": objection_coverage,
+        "customer_name_usage": name_usage,
         "talk_time_coverage_score": result["talk_time_coverage_score"],
         "talk_time_coverage_notes": result["talk_time_coverage_notes"],
         "filler_word_coverage_score": result["filler_word_coverage_score"],
