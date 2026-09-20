@@ -20,5 +20,3 @@ class AIQualityEvalOut(BaseModel):
 
 class AIQualityEvalsOut(BaseModel):
     transcript_analysis: AIQualityEvalOut | None = None
-    roleplay_simulation: AIQualityEvalOut | None = None
-    coaching_safety: AIQualityEvalOut | None = None

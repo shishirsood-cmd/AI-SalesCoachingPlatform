@@ -38,13 +38,8 @@ class OrganizationOut(BaseModel):
     id: uuid.UUID
     name: str
     invite_code: str
-    compliance_guidelines: str | None = None
 
     model_config = {"from_attributes": True}
-
-
-class OrganizationUpdate(BaseModel):
-    compliance_guidelines: str | None = Field(default=None, max_length=4000)
 
 
 class TokenResponse(BaseModel):

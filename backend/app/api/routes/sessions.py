@@ -11,18 +11,13 @@ from app.core.config import settings
 from app.db.session import get_db
 from app.models.ai_quality import AIQualityEval, AIQualityEvalType
 from app.models.evaluation import Evaluation
-from app.models.organization import Organization
 from app.models.scenario import Scenario
 from app.models.session import SessionStatus, SimulationSession, Speaker, Turn
 from app.models.user import User, UserRole
 from app.schemas.ai_quality import AIQualityEvalOut, AIQualityEvalsOut
 from app.schemas.evaluation import EvaluationOut
 from app.schemas.session import MessageIn, OrgSessionSummaryOut, SessionCreate, SessionOut, TurnOut
-from app.services.ai_quality_evals import (
-    run_coaching_safety_eval,
-    run_roleplay_simulation_eval,
-    run_transcript_analysis,
-)
+from app.services.ai_quality_evals import run_transcript_analysis
 from app.services.conversation import generate_ai_turn
 from app.services.evaluation import compute_overall_score, evaluate_session
 from app.services.voice import synthesize_speech, transcribe_audio
@@ -342,12 +337,14 @@ async def _upsert_ai_quality_eval(
 
 
 async def _get_ai_quality_evals(session_id: uuid.UUID, db: AsyncSession) -> AIQualityEvalsOut:
-    rows = (await db.scalars(select(AIQualityEval).where(AIQualityEval.session_id == session_id))).all()
-    by_type = {r.eval_type: AIQualityEvalOut.model_validate(r) for r in rows}
+    record = await db.scalar(
+        select(AIQualityEval).where(
+            AIQualityEval.session_id == session_id,
+            AIQualityEval.eval_type == AIQualityEvalType.transcript_analysis,
+        )
+    )
     return AIQualityEvalsOut(
-        transcript_analysis=by_type.get(AIQualityEvalType.transcript_analysis),
-        roleplay_simulation=by_type.get(AIQualityEvalType.roleplay_simulation),
-        coaching_safety=by_type.get(AIQualityEvalType.coaching_safety),
+        transcript_analysis=AIQualityEvalOut.model_validate(record) if record else None
     )
 
 
@@ -372,7 +369,6 @@ async def run_ai_quality_evals(
         )
 
     scenario = await db.get(Scenario, session.scenario_id)
-    org = await db.get(Organization, user.org_id)
 
     try:
         evaluation = await _ensure_evaluation(session, scenario, turns, db)
@@ -382,18 +378,6 @@ async def run_ai_quality_evals(
         )
         await _upsert_ai_quality_eval(
             session.id, AIQualityEvalType.transcript_analysis, transcript_scores, transcript_summary, db
-        )
-
-        roleplay_scores, roleplay_summary = await run_roleplay_simulation_eval(scenario, turns)
-        await _upsert_ai_quality_eval(
-            session.id, AIQualityEvalType.roleplay_simulation, roleplay_scores, roleplay_summary, db
-        )
-
-        safety_scores, safety_summary = await run_coaching_safety_eval(
-            scenario, turns, evaluation, org.compliance_guidelines
-        )
-        await _upsert_ai_quality_eval(
-            session.id, AIQualityEvalType.coaching_safety, safety_scores, safety_summary, db
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc

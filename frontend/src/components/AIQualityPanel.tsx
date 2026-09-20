@@ -8,19 +8,6 @@ import { ApiError } from "@/lib/api";
 import { DashboardCard } from "./DashboardCard";
 import { ScoreRow } from "./ScoreRow";
 
-function IssueList({ items }: { items: string[] }) {
-  if (items.length === 0) {
-    return <p className="text-sm text-green-700">None found.</p>;
-  }
-  return (
-    <ul className="list-inside list-disc text-sm text-red-600">
-      {items.map((item, i) => (
-        <li key={i}>{item}</li>
-      ))}
-    </ul>
-  );
-}
-
 export function AIQualityPanel({
   sessionId,
   initial,
@@ -32,7 +19,7 @@ export function AIQualityPanel({
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const hasAny = evals.transcript_analysis || evals.roleplay_simulation || evals.coaching_safety;
+  const hasAny = evals.transcript_analysis;
 
   async function handleRun() {
     setRunning(true);
@@ -64,8 +51,8 @@ export function AIQualityPanel({
 
       {!hasAny && !running && (
         <p className="text-sm text-neutral-500">
-          Grades the platform&apos;s own AI — not the rep — on Call Scorecard accuracy, roleplay
-          realism, and coaching feedback safety.
+          Audits the Call Scorecard above — not the rep — for whether it accurately and completely
+          reflects talk-time, filler words, objection handling, and framework adherence.
         </p>
       )}
 
@@ -191,35 +178,6 @@ export function AIQualityPanel({
               </p>
             </>
           )}
-        </div>
-      )}
-
-      {evals.roleplay_simulation && (
-        <div className="flex flex-col gap-3 border-t border-neutral-100 pt-4">
-          <h3 className="text-sm font-semibold text-neutral-700">Roleplay Simulation</h3>
-          <ScoreRow label="Stayed in character" score={evals.roleplay_simulation.scores.stayed_in_character_score} />
-          <ScoreRow label="Realistic pushback" score={evals.roleplay_simulation.scores.realistic_pushback_score} />
-          <ScoreRow label="Scenario adherence" score={evals.roleplay_simulation.scores.scenario_adherence_score} />
-          <p className="text-sm text-neutral-600">{evals.roleplay_simulation.summary}</p>
-        </div>
-      )}
-
-      {evals.coaching_safety && (
-        <div className="flex flex-col gap-3 border-t border-neutral-100 pt-4">
-          <h3 className="text-sm font-semibold text-neutral-700">Coaching Tone &amp; Safety</h3>
-          <ScoreRow
-            label="Tactical & constructive"
-            score={evals.coaching_safety.scores.tactical_constructive_score}
-          />
-          <ScoreRow label="Hallucination-free" score={evals.coaching_safety.scores.hallucination_free_score} />
-          <IssueList items={evals.coaching_safety.scores.hallucination_issues} />
-          {evals.coaching_safety.scores.compliance_score !== null && (
-            <>
-              <ScoreRow label="Compliance" score={evals.coaching_safety.scores.compliance_score} />
-              <IssueList items={evals.coaching_safety.scores.compliance_issues} />
-            </>
-          )}
-          <p className="text-sm text-neutral-600">{evals.coaching_safety.summary}</p>
         </div>
       )}
     </DashboardCard>

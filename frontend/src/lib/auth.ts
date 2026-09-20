@@ -14,7 +14,6 @@ export interface Organization {
   id: string;
   name: string;
   invite_code: string;
-  compliance_guidelines: string | null;
 }
 
 interface TokenResponse {

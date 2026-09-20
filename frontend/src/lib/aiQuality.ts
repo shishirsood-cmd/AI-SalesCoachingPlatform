@@ -1,6 +1,6 @@
 import { api } from "./api";
 
-export type AIQualityEvalType = "transcript_analysis" | "roleplay_simulation" | "coaching_safety";
+export type AIQualityEvalType = "transcript_analysis";
 
 export interface AIQualityEval {
   id: string;
@@ -14,8 +14,6 @@ export interface AIQualityEval {
 
 export interface AIQualityEvals {
   transcript_analysis: AIQualityEval | null;
-  roleplay_simulation: AIQualityEval | null;
-  coaching_safety: AIQualityEval | null;
 }
 
 export const aiQualityApi = {
