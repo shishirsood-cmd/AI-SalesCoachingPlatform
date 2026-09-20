@@ -64,7 +64,7 @@ export function AIQualityPanel({
 
       {!hasAny && !running && (
         <p className="text-sm text-neutral-500">
-          Grades the platform&apos;s own AI — not the rep — on transcript analysis accuracy, roleplay
+          Grades the platform&apos;s own AI — not the rep — on Call Scorecard accuracy, roleplay
           realism, and coaching feedback safety.
         </p>
       )}
@@ -72,9 +72,13 @@ export function AIQualityPanel({
       {evals.transcript_analysis && (
         <div className="flex flex-col gap-3 border-t border-neutral-100 pt-4">
           <h3 className="text-sm font-semibold text-neutral-700">Transcript Analysis</h3>
+          <p className="text-xs text-neutral-500">
+            Audits the Call Scorecard above for accuracy — does it correctly reflect what actually
+            happened in the transcript?
+          </p>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 text-sm text-neutral-600">
             <div>
-              <p className="font-medium text-neutral-800">Talk-time ratio</p>
+              <p className="font-medium text-neutral-800">Talk-time ratio (measured)</p>
               <p>
                 Rep {evals.transcript_analysis.scores.talk_time_ratio.rep_talk_time_pct}% &middot; AI
                 customer {(100 - evals.transcript_analysis.scores.talk_time_ratio.rep_talk_time_pct).toFixed(1)}%
@@ -82,33 +86,42 @@ export function AIQualityPanel({
               <p className="text-xs text-neutral-400">{evals.transcript_analysis.scores.talk_time_ratio.note}</p>
             </div>
             <div>
-              <p className="font-medium text-neutral-800">Filler words (rep)</p>
+              <p className="font-medium text-neutral-800">Filler words (measured)</p>
               <p>
                 {evals.transcript_analysis.scores.filler_words.total} total &middot;{" "}
                 {evals.transcript_analysis.scores.filler_words.per_100_words} per 100 words
               </p>
             </div>
           </div>
-          <p className="text-sm text-neutral-600">
-            {evals.transcript_analysis.scores.talk_time_and_fluency_notes}
-          </p>
           <ScoreRow
-            label="Objection handling"
-            score={evals.transcript_analysis.scores.objection_handling_score}
+            label="Scorecard covered talk-time accurately"
+            score={evals.transcript_analysis.scores.talk_time_coverage_score}
           />
-          <p className="text-sm text-neutral-600">{evals.transcript_analysis.scores.objection_handling_notes}</p>
-          {evals.transcript_analysis.scores.framework_adherence_score !== null && (
+          <p className="text-sm text-neutral-600">{evals.transcript_analysis.scores.talk_time_coverage_notes}</p>
+          <ScoreRow
+            label="Scorecard covered filler words/fluency accurately"
+            score={evals.transcript_analysis.scores.filler_word_coverage_score}
+          />
+          <p className="text-sm text-neutral-600">{evals.transcript_analysis.scores.filler_word_coverage_notes}</p>
+          <ScoreRow
+            label="Scorecard's objection-handling assessment is accurate"
+            score={evals.transcript_analysis.scores.objection_handling_accuracy_score}
+          />
+          <p className="text-sm text-neutral-600">
+            {evals.transcript_analysis.scores.objection_handling_accuracy_notes}
+          </p>
+          {evals.transcript_analysis.scores.framework_adherence_accuracy_score !== null && (
             <>
               <ScoreRow
-                label={`Framework adherence${
+                label={`Scorecard's framework-adherence assessment is accurate${
                   evals.transcript_analysis.scores.sales_framework
                     ? ` (${evals.transcript_analysis.scores.sales_framework})`
                     : ""
                 }`}
-                score={evals.transcript_analysis.scores.framework_adherence_score}
+                score={evals.transcript_analysis.scores.framework_adherence_accuracy_score}
               />
               <p className="text-sm text-neutral-600">
-                {evals.transcript_analysis.scores.framework_adherence_notes}
+                {evals.transcript_analysis.scores.framework_adherence_accuracy_notes}
               </p>
             </>
           )}

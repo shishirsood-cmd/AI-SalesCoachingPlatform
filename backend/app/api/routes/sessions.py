@@ -377,7 +377,7 @@ async def run_ai_quality_evals(
     try:
         evaluation = await _ensure_evaluation(session, scenario, turns, db)
 
-        transcript_scores, transcript_summary = await run_transcript_analysis(scenario, turns)
+        transcript_scores, transcript_summary = await run_transcript_analysis(scenario, turns, evaluation)
         await _upsert_ai_quality_eval(
             session.id, AIQualityEvalType.transcript_analysis, transcript_scores, transcript_summary, db
         )
