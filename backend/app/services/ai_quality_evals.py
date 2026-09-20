@@ -92,25 +92,49 @@ async def _call_claude_judge(system_prompt: str, user_message: str, tool: dict[s
 
 
 async def run_transcript_analysis(scenario: Scenario, turns: list[Turn]) -> tuple[dict[str, Any], str]:
+    # Compute the two deterministic metrics *first* so Claude can be given the actual
+    # numbers to interpret, rather than analyzing objection handling in isolation and
+    # never engaging with talk-time/filler-word data at all.
+    talk_time = compute_talk_time_ratio(turns)
+    fillers = compute_filler_word_count(turns)
+
     properties: dict[str, Any] = {
+        "talk_time_and_fluency_notes": {
+            "type": "string",
+            "description": (
+                "Interpret the provided talk-time ratio and filler-word numbers below — what they "
+                "suggest about the rep's call control, listening, and verbal fluency. Always include "
+                "this field, even if brief."
+            ),
+        },
         "objection_handling_score": {
             "type": "number",
             "description": "0-100, how well the rep addressed the objections the customer raised",
         },
         "objection_handling_notes": {"type": "string"},
     }
-    required = ["objection_handling_score", "objection_handling_notes"]
+    required = ["talk_time_and_fluency_notes", "objection_handling_score", "objection_handling_notes"]
     if scenario.sales_framework:
         properties["framework_adherence_score"] = {
             "type": "number",
-            "description": f"0-100, adherence to the {scenario.sales_framework} sales framework",
+            "description": (
+                f"0-100, adherence to the {scenario.sales_framework} sales framework. Always include "
+                "this field; use a low score (not omission) if the framework wasn't followed at all."
+            ),
         }
-        properties["framework_adherence_notes"] = {"type": "string"}
+        properties["framework_adherence_notes"] = {
+            "type": "string",
+            "description": "Always include this field, even if brief.",
+        }
         required += ["framework_adherence_score", "framework_adherence_notes"]
 
     tool = {
         "name": "submit_transcript_analysis",
-        "description": "Submit analysis of objection handling and sales-framework adherence from this call transcript.",
+        "description": (
+            "Submit a transcript analysis covering talk-time/fluency, objection handling, and (if "
+            "configured) sales-framework adherence. Every required field must be present in every "
+            "call — never omit one."
+        ),
         "input_schema": {"type": "object", "properties": properties, "required": required},
     }
 
@@ -119,8 +143,14 @@ async def run_transcript_analysis(scenario: Scenario, turns: list[Turn]) -> tupl
         if scenario.sales_framework
         else "No specific sales framework was configured for this scenario — skip framework scoring."
     )
-    system_prompt = f"""You are an expert sales call analyst. Analyze this transcript for objection handling \
-quality — how well the rep addressed the customer's pushback. {framework_line}
+    system_prompt = f"""You are an expert sales call analyst. Your analysis must cover talk-time/fluency \
+and objection handling — how well the rep addressed the customer's pushback. {framework_line}
+
+COMPUTED METRICS (reference these directly in talk_time_and_fluency_notes — do not recompute them):
+- Rep talk-time: {talk_time["rep_talk_time_pct"]}% of words spoken ({talk_time["rep_words"]} rep words vs \
+{talk_time["ai_words"]} customer words)
+- Filler words used by the rep: {fillers["total"]} total, {fillers["per_100_words"]} per 100 words \
+({fillers["by_word"] or "none detected"})
 
 SCENARIO: {scenario.title}
 CONFIGURED OBJECTIONS: {", ".join(scenario.objections) or "none specified"}
@@ -131,18 +161,19 @@ TRANSCRIPT:
     result = await _call_claude_judge(system_prompt, "Analyze this call now.", tool)
 
     scores = {
-        "talk_time_ratio": compute_talk_time_ratio(turns),
-        "filler_words": compute_filler_word_count(turns),
+        "talk_time_ratio": talk_time,
+        "filler_words": fillers,
+        "talk_time_and_fluency_notes": result["talk_time_and_fluency_notes"],
         "objection_handling_score": result["objection_handling_score"],
         "objection_handling_notes": result["objection_handling_notes"],
         "framework_adherence_score": result.get("framework_adherence_score"),
         "framework_adherence_notes": result.get("framework_adherence_notes"),
         "sales_framework": scenario.sales_framework,
     }
-    summary = result["objection_handling_notes"]
+    summary_parts = [result["talk_time_and_fluency_notes"], result["objection_handling_notes"]]
     if scenario.sales_framework and result.get("framework_adherence_notes"):
-        summary += " " + result["framework_adherence_notes"]
-    return scores, summary
+        summary_parts.append(result["framework_adherence_notes"])
+    return scores, " ".join(summary_parts)
 
 
 async def run_roleplay_simulation_eval(scenario: Scenario, turns: list[Turn]) -> tuple[dict[str, Any], str]:

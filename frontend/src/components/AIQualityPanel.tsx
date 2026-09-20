@@ -89,6 +89,9 @@ export function AIQualityPanel({
               </p>
             </div>
           </div>
+          <p className="text-sm text-neutral-600">
+            {evals.transcript_analysis.scores.talk_time_and_fluency_notes}
+          </p>
           <ScoreRow
             label="Objection handling"
             score={evals.transcript_analysis.scores.objection_handling_score}
