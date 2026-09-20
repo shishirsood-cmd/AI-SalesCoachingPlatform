@@ -33,6 +33,9 @@ class Scenario(Base):
     # List of {"name": str, "description": str, "weight": float}; weights expressed as
     # percentages that should sum to 100 (enforced at the API layer, not the DB).
     rubric_criteria: Mapped[list[dict]] = mapped_column(JSON, nullable=False, default=list)
+    # Optional named sales methodology (e.g. "SPIN Selling") to grade framework
+    # adherence against in AI Quality Evals. Blank skips that sub-score entirely.
+    sales_framework: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()

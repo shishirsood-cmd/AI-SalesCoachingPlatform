@@ -37,3 +37,15 @@ class SessionOut(BaseModel):
 
 class MessageIn(BaseModel):
     content: str = Field(min_length=1, max_length=4000)
+
+
+class OrgSessionSummaryOut(BaseModel):
+    id: uuid.UUID
+    rep_id: uuid.UUID
+    rep_name: str
+    scenario_id: uuid.UUID
+    scenario_title: str
+    status: SessionStatus
+    started_at: datetime
+    ended_at: datetime | None
+    overall_score: float | None = None

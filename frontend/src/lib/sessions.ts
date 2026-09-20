@@ -22,8 +22,22 @@ export interface SimulationSession {
   audio_base64: string | null;
 }
 
+export interface OrgSessionSummary {
+  id: string;
+  rep_id: string;
+  rep_name: string;
+  scenario_id: string;
+  scenario_title: string;
+  status: SessionStatus;
+  started_at: string;
+  ended_at: string | null;
+  overall_score: number | null;
+}
+
 export const sessionsApi = {
   list: () => api.get<SimulationSession[]>("/sessions"),
+  listForTeam: (repId?: string) =>
+    api.get<OrgSessionSummary[]>(`/sessions/team${repId ? `?rep_id=${repId}` : ""}`),
   get: (id: string) => api.get<SimulationSession>(`/sessions/${id}`),
   start: (scenarioId: string, opts?: { voice?: boolean }) =>
     api.post<SimulationSession>(`/sessions${opts?.voice ? "?voice=true" : ""}`, {

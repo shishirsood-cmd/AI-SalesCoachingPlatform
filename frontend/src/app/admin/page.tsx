@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { DashboardCard } from "@/components/DashboardCard";
 import { InviteCode } from "@/components/InviteCode";
 import { KnowledgeBase } from "@/components/KnowledgeBase";
+import { RecentCalls } from "@/components/RecentCalls";
 import { RoleGuard } from "@/components/RoleGuard";
 import { TeamAnalytics } from "@/components/TeamAnalytics";
 import { ApiError } from "@/lib/api";
@@ -97,6 +98,8 @@ export default function AdminPage() {
           </DashboardCard>
 
           <TeamAnalytics />
+
+          <RecentCalls />
 
           <KnowledgeBase />
         </main>

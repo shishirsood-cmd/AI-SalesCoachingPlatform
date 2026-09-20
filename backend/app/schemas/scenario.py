@@ -19,6 +19,7 @@ class ScenarioBase(BaseModel):
     difficulty: Difficulty
     call_type: CallType
     rubric_criteria: list[RubricCriterion] = Field(min_length=1)
+    sales_framework: str | None = Field(default=None, max_length=255)
 
     @field_validator("rubric_criteria")
     @classmethod

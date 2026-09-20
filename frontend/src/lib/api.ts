@@ -44,6 +44,8 @@ export const api = {
     request<T>(path, { method: "POST", body: JSON.stringify(data) }),
   put: <T>(path: string, data: unknown) =>
     request<T>(path, { method: "PUT", body: JSON.stringify(data) }),
+  patch: <T>(path: string, data: unknown) =>
+    request<T>(path, { method: "PATCH", body: JSON.stringify(data) }),
   del: <T>(path: string) => request<T>(path, { method: "DELETE" }),
   upload: async <T>(path: string, file: Blob, filename = "upload"): Promise<T> => {
     const formData = new FormData();

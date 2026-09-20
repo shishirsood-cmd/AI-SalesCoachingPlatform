@@ -24,6 +24,7 @@ export function ScenarioForm({
   const [criteria, setCriteria] = useState<RubricCriterion[]>(
     initial?.rubric_criteria ?? [{ ...emptyCriterion }]
   );
+  const [salesFramework, setSalesFramework] = useState(initial?.sales_framework ?? "");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -59,6 +60,7 @@ export function ScenarioForm({
         difficulty,
         call_type: callType,
         rubric_criteria: criteria.filter((c) => c.name.trim()),
+        sales_framework: salesFramework.trim() || null,
       });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong");
@@ -115,6 +117,19 @@ export function ScenarioForm({
             <option value="support">Support</option>
           </select>
         </div>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label className="text-sm font-medium">Sales framework (optional)</label>
+        <input
+          value={salesFramework}
+          onChange={(e) => setSalesFramework(e.target.value)}
+          placeholder="e.g. SPIN Selling, BANT, MEDDIC — leave blank to skip framework scoring"
+          className="rounded border border-neutral-300 px-3 py-2 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        />
+        <p className="text-xs text-neutral-500">
+          If set, AI Quality Evals will grade adherence to this methodology.
+        </p>
       </div>
 
       <div className="flex flex-col gap-2">

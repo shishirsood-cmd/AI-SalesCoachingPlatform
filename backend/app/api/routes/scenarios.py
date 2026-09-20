@@ -54,6 +54,7 @@ async def create_scenario(
         difficulty=payload.difficulty,
         call_type=payload.call_type,
         rubric_criteria=[c.model_dump() for c in payload.rubric_criteria],
+        sales_framework=payload.sales_framework,
     )
     db.add(scenario)
     await db.commit()
@@ -75,6 +76,7 @@ async def update_scenario(
     scenario.difficulty = payload.difficulty
     scenario.call_type = payload.call_type
     scenario.rubric_criteria = [c.model_dump() for c in payload.rubric_criteria]
+    scenario.sales_framework = payload.sales_framework
     await db.commit()
     await db.refresh(scenario)
     return scenario
