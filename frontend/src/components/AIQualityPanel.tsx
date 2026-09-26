@@ -110,6 +110,9 @@ export function AIQualityPanel({
                 <p className="font-medium text-neutral-800">
                   {evals.transcript_analysis.scores.rep_turn_length.average_words}w avg /{" "}
                   {evals.transcript_analysis.scores.rep_turn_length.longest_words}w longest
+                  {evals.transcript_analysis.scores.rep_turn_length.stdev_words !== undefined
+                    ? ` (σ ${evals.transcript_analysis.scores.rep_turn_length.stdev_words}w)`
+                    : ""}
                 </p>
               </div>
               <div>
@@ -118,6 +121,9 @@ export function AIQualityPanel({
                   {evals.transcript_analysis.scores.response_latency.average_seconds !== null
                     ? `${evals.transcript_analysis.scores.response_latency.average_seconds}s avg`
                     : "—"}
+                  {evals.transcript_analysis.scores.response_latency.max_seconds != null
+                    ? ` / ${evals.transcript_analysis.scores.response_latency.max_seconds}s max`
+                    : ""}
                 </p>
               </div>
               <div>
@@ -127,6 +133,16 @@ export function AIQualityPanel({
                   {evals.transcript_analysis.scores.objection_coverage.configured_count}
                 </p>
               </div>
+              {evals.transcript_analysis.scores.speaking_pace && (
+                <div>
+                  <p className="text-xs text-neutral-400">Rep speaking pace</p>
+                  <p className="font-medium text-neutral-800">
+                    {evals.transcript_analysis.scores.speaking_pace.words_per_minute !== null
+                      ? `${evals.transcript_analysis.scores.speaking_pace.words_per_minute} wpm`
+                      : "—"}
+                  </p>
+                </div>
+              )}
               <div className="col-span-2">
                 <p className="text-xs text-neutral-400">Customer name usage</p>
                 <p className="font-medium text-neutral-800">
@@ -139,6 +155,16 @@ export function AIQualityPanel({
                     : "Not detected"}
                 </p>
               </div>
+              {evals.transcript_analysis.scores.talk_time_trend && (
+                <div className="col-span-2">
+                  <p className="text-xs text-neutral-400">Talk-time trend (first half → second half)</p>
+                  <p className="font-medium text-neutral-800">
+                    {evals.transcript_analysis.scores.talk_time_trend.first_half_rep_pct !== null
+                      ? `${evals.transcript_analysis.scores.talk_time_trend.first_half_rep_pct}% rep → ${evals.transcript_analysis.scores.talk_time_trend.second_half_rep_pct}% rep`
+                      : "Call too short to split"}
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
             <p className="text-xs text-neutral-400">
