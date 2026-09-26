@@ -1,6 +1,8 @@
 import uuid
+from pathlib import Path
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -83,6 +85,20 @@ async def upload_doc(
     background_tasks.add_task(ingest_document, doc.id)
 
     return doc
+
+
+@router.get("/{doc_id}/download")
+async def download_doc(
+    doc_id: uuid.UUID,
+    user: User = Depends(require_role(UserRole.team_lead)),
+    db: AsyncSession = Depends(get_db),
+) -> FileResponse:
+    doc = await db.get(KnowledgeDoc, doc_id)
+    if doc is None or doc.org_id != user.org_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found")
+    if not Path(doc.storage_path).exists():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File no longer available")
+    return FileResponse(doc.storage_path, filename=doc.filename, media_type="application/octet-stream")
 
 
 @router.delete("/{doc_id}", status_code=status.HTTP_204_NO_CONTENT)

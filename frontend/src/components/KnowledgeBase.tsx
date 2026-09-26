@@ -69,6 +69,20 @@ export function KnowledgeBase() {
     }
   }
 
+  async function handleDownload(doc: KnowledgeDoc) {
+    try {
+      const blob = await knowledgeApi.download(doc.id);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = doc.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to download");
+    }
+  }
+
   return (
     <DashboardCard
       accent="bg-amber-500"
@@ -112,6 +126,14 @@ export function KnowledgeBase() {
                 <span className={`rounded px-2 py-0.5 text-xs ${STATUS_STYLES[doc.status]}`}>
                   {doc.status}
                 </span>
+                {doc.status === "ready" && (
+                  <button
+                    onClick={() => handleDownload(doc)}
+                    className="text-sm text-indigo-600 hover:text-indigo-700"
+                  >
+                    Download
+                  </button>
+                )}
                 <button
                   onClick={() => handleDelete(doc.id)}
                   className="text-sm text-neutral-500 hover:text-red-600"

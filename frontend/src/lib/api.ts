@@ -57,4 +57,12 @@ export const api = {
     });
     return parseResponse<T>(res);
   },
+  downloadBlob: async (path: string): Promise<Blob> => {
+    const res = await fetch(`${API_URL}${path}`, { headers: authHeaders() });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ detail: res.statusText }));
+      throw new ApiError(res.status, typeof body.detail === "string" ? body.detail : "Request failed");
+    }
+    return res.blob();
+  },
 };

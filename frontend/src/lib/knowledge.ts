@@ -15,4 +15,5 @@ export const knowledgeApi = {
   list: () => api.get<KnowledgeDoc[]>("/knowledge"),
   upload: (file: File) => api.upload<KnowledgeDoc>("/knowledge/upload", file, file.name),
   remove: (id: string) => api.del<void>(`/knowledge/${id}`),
+  download: (id: string) => api.downloadBlob(`/knowledge/${id}/download`),
 };
