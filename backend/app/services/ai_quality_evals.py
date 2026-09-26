@@ -232,63 +232,36 @@ async def run_transcript_analysis(
     name_usage = compute_customer_name_usage(turns)
     scorecard_text = _build_scorecard_text(evaluation)
 
-    properties: dict[str, Any] = {
-        "talk_time_coverage_score": {
-            "type": "number",
-            "description": (
-                "0-100 — did the scorecard's feedback appropriately account for the actual talk-time "
-                "balance below, when it was relevant to do so? Always include this field."
-            ),
-        },
-        "talk_time_coverage_notes": {"type": "string"},
-        "filler_word_coverage_score": {
-            "type": "number",
-            "description": (
-                "0-100 — did the scorecard note fluency/filler-word issues if the rep's filler-word "
-                "usage below was significant enough to matter? Always include this field."
-            ),
-        },
-        "filler_word_coverage_notes": {"type": "string"},
-        "objection_handling_accuracy_score": {
-            "type": "number",
-            "description": (
-                "0-100 — is the scorecard's assessment of how objections were handled accurate and "
-                "consistent with what actually happened in the transcript?"
-            ),
-        },
-        "objection_handling_accuracy_notes": {"type": "string"},
-    }
-    required = [
-        "talk_time_coverage_score",
-        "talk_time_coverage_notes",
-        "filler_word_coverage_score",
-        "filler_word_coverage_notes",
-        "objection_handling_accuracy_score",
-        "objection_handling_accuracy_notes",
-    ]
-    if scenario.sales_framework:
-        properties["framework_adherence_accuracy_score"] = {
-            "type": "number",
-            "description": (
-                f"0-100 — does the scorecard accurately reflect adherence to the "
-                f"{scenario.sales_framework} sales framework, even though the rubric may not have an "
-                "explicit framework criterion? Always include this field."
-            ),
-        }
-        properties["framework_adherence_accuracy_notes"] = {
-            "type": "string",
-            "description": "Always include this field, even if brief.",
-        }
-        required += ["framework_adherence_accuracy_score", "framework_adherence_accuracy_notes"]
-
     tool = {
         "name": "submit_transcript_analysis",
         "description": (
-            "Submit an audit of the AI-generated Call Scorecard's accuracy and completeness — NOT a "
-            "fresh grading of the rep. Every required field must be present in every call — never "
-            "omit one."
+            "Submit a single aggregate audit of the AI-generated Call Scorecard's accuracy and "
+            "completeness — NOT a fresh grading of the rep. Both fields are always required."
         ),
-        "input_schema": {"type": "object", "properties": properties, "required": required},
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "accuracy_score": {
+                    "type": "number",
+                    "description": (
+                        "0-100 — overall, how accurately and completely does the scorecard reflect what "
+                        "actually happened in the transcript across talk-time balance, filler-word/"
+                        "fluency issues, objection handling, and (if a sales framework is configured) "
+                        "framework adherence? Weigh any factually wrong or misleading claims heavily; "
+                        "weigh omissions of context that wasn't very relevant lightly. Always include "
+                        "this field."
+                    ),
+                },
+                "notes": {
+                    "type": "string",
+                    "description": (
+                        "Explain the score: call out any specific inaccuracies or omissions found "
+                        "(or confirm the scorecard was accurate and complete). Always include this field."
+                    ),
+                },
+            },
+            "required": ["accuracy_score", "notes"],
+        },
     }
 
     framework_line = (
@@ -300,7 +273,8 @@ async def run_transcript_analysis(
     system_prompt = f"""You are auditing an AI-generated sales call "Call Scorecard" for accuracy and \
 completeness. You are NOT re-grading the sales rep yourself — you are checking whether the scorecard \
 below correctly and completely reflects what actually happened in the transcript, specifically \
-regarding talk-time balance, filler-word/fluency issues, and objection handling. {framework_line}
+regarding talk-time balance, filler-word/fluency issues, and objection handling, and giving one \
+aggregate accuracy score covering all of it. {framework_line}
 
 COMPUTED METRICS (ground truth to check the scorecard against — do not recompute them):
 - Rep talk-time: {talk_time["rep_talk_time_pct"]}% of words spoken ({talk_time["rep_words"]} rep words vs \
@@ -340,24 +314,8 @@ CALL SCORECARD TO AUDIT (this is what the rep was actually shown — judge its a
         "response_latency": response_latency,
         "objection_coverage": objection_coverage,
         "customer_name_usage": name_usage,
-        "talk_time_coverage_score": result["talk_time_coverage_score"],
-        "talk_time_coverage_notes": result["talk_time_coverage_notes"],
-        "filler_word_coverage_score": result["filler_word_coverage_score"],
-        "filler_word_coverage_notes": result["filler_word_coverage_notes"],
-        "objection_handling_accuracy_score": result["objection_handling_accuracy_score"],
-        "objection_handling_accuracy_notes": result["objection_handling_accuracy_notes"],
-        "framework_adherence_accuracy_score": result.get("framework_adherence_accuracy_score"),
-        "framework_adherence_accuracy_notes": result.get("framework_adherence_accuracy_notes"),
+        "accuracy_score": result["accuracy_score"],
         "sales_framework": scenario.sales_framework,
+        "overall_score": result["accuracy_score"],
     }
-    numeric = [v for k, v in scores.items() if k.endswith("_score") and isinstance(v, (int, float))]
-    scores["overall_score"] = round(sum(numeric) / len(numeric), 1) if numeric else 0.0
-
-    summary_parts = [
-        result["talk_time_coverage_notes"],
-        result["filler_word_coverage_notes"],
-        result["objection_handling_accuracy_notes"],
-    ]
-    if scenario.sales_framework and result.get("framework_adherence_accuracy_notes"):
-        summary_parts.append(result["framework_adherence_accuracy_notes"])
-    return scores, " ".join(summary_parts)
+    return scores, result["notes"]

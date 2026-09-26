@@ -147,37 +147,14 @@ export function AIQualityPanel({
           )}
 
           <ScoreRow
-            label="Scorecard covered talk-time accurately"
-            score={evals.transcript_analysis.scores.talk_time_coverage_score}
+            label={`Scorecard accuracy${
+              evals.transcript_analysis.scores.sales_framework
+                ? ` (incl. ${evals.transcript_analysis.scores.sales_framework} adherence)`
+                : ""
+            }`}
+            score={evals.transcript_analysis.scores.accuracy_score}
           />
-          <p className="text-sm text-neutral-600">{evals.transcript_analysis.scores.talk_time_coverage_notes}</p>
-          <ScoreRow
-            label="Scorecard covered filler words/fluency accurately"
-            score={evals.transcript_analysis.scores.filler_word_coverage_score}
-          />
-          <p className="text-sm text-neutral-600">{evals.transcript_analysis.scores.filler_word_coverage_notes}</p>
-          <ScoreRow
-            label="Scorecard's objection-handling assessment is accurate"
-            score={evals.transcript_analysis.scores.objection_handling_accuracy_score}
-          />
-          <p className="text-sm text-neutral-600">
-            {evals.transcript_analysis.scores.objection_handling_accuracy_notes}
-          </p>
-          {evals.transcript_analysis.scores.framework_adherence_accuracy_score !== null && (
-            <>
-              <ScoreRow
-                label={`Scorecard's framework-adherence assessment is accurate${
-                  evals.transcript_analysis.scores.sales_framework
-                    ? ` (${evals.transcript_analysis.scores.sales_framework})`
-                    : ""
-                }`}
-                score={evals.transcript_analysis.scores.framework_adherence_accuracy_score}
-              />
-              <p className="text-sm text-neutral-600">
-                {evals.transcript_analysis.scores.framework_adherence_accuracy_notes}
-              </p>
-            </>
-          )}
+          <p className="text-sm text-neutral-600">{evals.transcript_analysis.summary}</p>
         </div>
       )}
     </DashboardCard>
