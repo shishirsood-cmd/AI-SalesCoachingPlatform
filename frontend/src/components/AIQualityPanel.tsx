@@ -196,7 +196,7 @@ export function AIQualityPanel({
                 {evals.transcript_analysis.scores.feedback_objectivity_notes}
               </p>
             </>
-          ) : (
+          ) : evals.transcript_analysis.scores.accuracy_score !== undefined ? (
             <>
               <ScoreRow
                 label={`Scorecard accuracy${
@@ -211,6 +211,10 @@ export function AIQualityPanel({
                 Re-run the eval to see the newer metrics/tone/feedback-objectivity breakdown.
               </p>
             </>
+          ) : (
+            <p className="text-xs text-neutral-400">
+              This eval was run in an older format. Re-run it to see current scores.
+            </p>
           )}
         </div>
       )}
