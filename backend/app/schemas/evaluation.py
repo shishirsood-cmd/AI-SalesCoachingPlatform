@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel
 
@@ -15,6 +16,7 @@ class EvaluationOut(BaseModel):
     session_id: uuid.UUID
     overall_score: float
     criteria_scores: list[CriterionScore]
+    call_metrics: dict[str, Any]
     strengths: list[str]
     areas_for_improvement: list[str]
     summary: str

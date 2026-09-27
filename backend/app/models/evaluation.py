@@ -20,6 +20,10 @@ class Evaluation(Base):
     overall_score: Mapped[float] = mapped_column(Float, nullable=False)
     # List of {"name": str, "score": float (0-100), "feedback": str}
     criteria_scores: Mapped[list[dict]] = mapped_column(JSON, nullable=False)
+    # Deterministic, code-computed call metrics (talk-time, filler words, turns, response
+    # length, etc.) — see app/services/call_metrics.py. Published alongside the rubric
+    # scores so the scorecard isn't graded on metrics it was never given.
+    call_metrics: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     strengths: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     areas_for_improvement: Mapped[list[str]] = mapped_column(JSON, nullable=False, default=list)
     summary: Mapped[str] = mapped_column(Text, nullable=False)

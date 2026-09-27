@@ -18,6 +18,7 @@ from app.schemas.ai_quality import AIQualityEvalOut, AIQualityEvalsOut
 from app.schemas.evaluation import EvaluationOut
 from app.schemas.session import MessageIn, OrgSessionSummaryOut, SessionCreate, SessionOut, TurnOut
 from app.services.ai_quality_evals import run_customer_persona_eval, run_transcript_analysis
+from app.services.call_metrics import compute_call_metrics
 from app.services.conversation import generate_ai_turn
 from app.services.evaluation import compute_overall_score, evaluate_session
 from app.services.voice import synthesize_speech, transcribe_audio
@@ -71,6 +72,7 @@ async def _ensure_evaluation(
         session_id=session.id,
         overall_score=overall_score,
         criteria_scores=result["criteria"],
+        call_metrics=compute_call_metrics(session, turns),
         strengths=result["strengths"],
         areas_for_improvement=result["areas_for_improvement"],
         summary=result["summary"],

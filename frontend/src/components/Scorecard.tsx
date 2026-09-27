@@ -16,6 +16,65 @@ export function Scorecard({ evaluation }: { evaluation: Evaluation }) {
 
       <p className="text-sm text-neutral-700">{evaluation.summary}</p>
 
+      {evaluation.call_metrics && Object.keys(evaluation.call_metrics).length > 0 && (
+        <div className="flex flex-col gap-2">
+          <h3 className="text-sm font-semibold text-neutral-700">Call metrics</h3>
+          <div className="grid grid-cols-2 gap-3 rounded border border-neutral-100 bg-neutral-50 p-3 text-sm text-neutral-600 sm:grid-cols-4">
+            <div>
+              <p className="text-xs text-neutral-400">Talk-time ratio</p>
+              <p className="font-medium text-neutral-800">
+                {evaluation.call_metrics.talk_time_ratio.rep_talk_time_pct}% rep
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-neutral-400">Filler words</p>
+              <p className="font-medium text-neutral-800">
+                {evaluation.call_metrics.filler_words.total} total (
+                {evaluation.call_metrics.filler_words.per_100_words}/100w)
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-neutral-400">Turns</p>
+              <p className="font-medium text-neutral-800">
+                {evaluation.call_metrics.turn_counts.rep_turns} rep /{" "}
+                {evaluation.call_metrics.turn_counts.ai_turns} customer
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-neutral-400">Rep response length</p>
+              <p className="font-medium text-neutral-800">
+                {evaluation.call_metrics.rep_turn_length.average_words}w avg /{" "}
+                {evaluation.call_metrics.rep_turn_length.longest_words}w longest
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-neutral-400">Call duration</p>
+              <p className="font-medium text-neutral-800">
+                {evaluation.call_metrics.call_duration.seconds !== null
+                  ? `${evaluation.call_metrics.call_duration.seconds}s`
+                  : "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs text-neutral-400">Rep response latency</p>
+              <p className="font-medium text-neutral-800">
+                {evaluation.call_metrics.response_latency.average_seconds !== null
+                  ? `${evaluation.call_metrics.response_latency.average_seconds}s avg`
+                  : "—"}
+              </p>
+            </div>
+            <div className="col-span-2">
+              <p className="text-xs text-neutral-400">Rep speaking pace</p>
+              <p className="font-medium text-neutral-800">
+                {evaluation.call_metrics.speaking_pace.words_per_minute !== null
+                  ? `${evaluation.call_metrics.speaking_pace.words_per_minute} wpm`
+                  : "—"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-4">
         {evaluation.criteria_scores.map((c) => (
           <div key={c.name} className="flex flex-col gap-1">

@@ -11,6 +11,8 @@ export interface Evaluation {
   session_id: string;
   overall_score: number;
   criteria_scores: CriterionScore[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  call_metrics: Record<string, any>;
   strengths: string[];
   areas_for_improvement: string[];
   summary: string;
