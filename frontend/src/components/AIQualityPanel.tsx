@@ -19,7 +19,7 @@ export function AIQualityPanel({
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const hasAny = evals.transcript_analysis;
+  const hasAny = evals.transcript_analysis || evals.customer_persona;
 
   async function handleRun() {
     setRunning(true);
@@ -51,8 +51,8 @@ export function AIQualityPanel({
 
       {!hasAny && !running && (
         <p className="text-sm text-neutral-500">
-          Audits the Call Scorecard above — not the rep — for whether it accurately and completely
-          reflects talk-time, filler words, objection handling, and framework adherence.
+          Audits the Call Scorecard above for metrics/tone/feedback accuracy, and grades the AI
+          customer persona itself for staying in character and raising its configured objections.
         </p>
       )}
 
@@ -172,15 +172,65 @@ export function AIQualityPanel({
             </p>
           )}
 
+          {evals.transcript_analysis.scores.metrics_accuracy_score !== undefined ? (
+            <>
+              <ScoreRow
+                label="Metrics accuracy (talk-time, filler words, turns, length)"
+                score={evals.transcript_analysis.scores.metrics_accuracy_score}
+              />
+              <p className="text-sm text-neutral-600">{evals.transcript_analysis.scores.metrics_accuracy_notes}</p>
+              <ScoreRow
+                label="Tone & confidence accuracy (text-based proxy, not audio)"
+                score={evals.transcript_analysis.scores.tone_confidence_score}
+              />
+              <p className="text-sm text-neutral-600">{evals.transcript_analysis.scores.tone_confidence_notes}</p>
+              <ScoreRow
+                label={`Feedback objectivity on other criteria${
+                  evals.transcript_analysis.scores.sales_framework
+                    ? ` (incl. ${evals.transcript_analysis.scores.sales_framework} adherence)`
+                    : ""
+                }`}
+                score={evals.transcript_analysis.scores.feedback_objectivity_score}
+              />
+              <p className="text-sm text-neutral-600">
+                {evals.transcript_analysis.scores.feedback_objectivity_notes}
+              </p>
+            </>
+          ) : (
+            <>
+              <ScoreRow
+                label={`Scorecard accuracy${
+                  evals.transcript_analysis.scores.sales_framework
+                    ? ` (incl. ${evals.transcript_analysis.scores.sales_framework} adherence)`
+                    : ""
+                }`}
+                score={evals.transcript_analysis.scores.accuracy_score}
+              />
+              <p className="text-sm text-neutral-600">{evals.transcript_analysis.summary}</p>
+              <p className="text-xs text-neutral-400">
+                Re-run the eval to see the newer metrics/tone/feedback-objectivity breakdown.
+              </p>
+            </>
+          )}
+        </div>
+      )}
+
+      {evals.customer_persona && (
+        <div className="flex flex-col gap-3 border-t border-neutral-100 pt-4">
+          <h3 className="text-sm font-semibold text-neutral-700">Customer Persona</h3>
+          <p className="text-xs text-neutral-500">
+            Grades the AI customer itself — not the rep or the scorecard — on persona fidelity.
+          </p>
           <ScoreRow
-            label={`Scorecard accuracy${
-              evals.transcript_analysis.scores.sales_framework
-                ? ` (incl. ${evals.transcript_analysis.scores.sales_framework} adherence)`
-                : ""
-            }`}
-            score={evals.transcript_analysis.scores.accuracy_score}
+            label="Stayed in character"
+            score={evals.customer_persona.scores.stayed_in_character_score}
           />
-          <p className="text-sm text-neutral-600">{evals.transcript_analysis.summary}</p>
+          <p className="text-sm text-neutral-600">{evals.customer_persona.scores.stayed_in_character_notes}</p>
+          <ScoreRow
+            label={`Raised configured objections (${evals.customer_persona.scores.objection_coverage.raised_count}/${evals.customer_persona.scores.objection_coverage.configured_count} matched by heuristic)`}
+            score={evals.customer_persona.scores.raised_objections_score}
+          />
+          <p className="text-sm text-neutral-600">{evals.customer_persona.scores.raised_objections_notes}</p>
         </div>
       )}
     </DashboardCard>

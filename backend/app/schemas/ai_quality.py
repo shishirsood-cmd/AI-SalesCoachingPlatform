@@ -20,3 +20,4 @@ class AIQualityEvalOut(BaseModel):
 
 class AIQualityEvalsOut(BaseModel):
     transcript_analysis: AIQualityEvalOut | None = None
+    customer_persona: AIQualityEvalOut | None = None

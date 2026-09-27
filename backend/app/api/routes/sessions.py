@@ -17,7 +17,7 @@ from app.models.user import User, UserRole
 from app.schemas.ai_quality import AIQualityEvalOut, AIQualityEvalsOut
 from app.schemas.evaluation import EvaluationOut
 from app.schemas.session import MessageIn, OrgSessionSummaryOut, SessionCreate, SessionOut, TurnOut
-from app.services.ai_quality_evals import run_transcript_analysis
+from app.services.ai_quality_evals import run_customer_persona_eval, run_transcript_analysis
 from app.services.conversation import generate_ai_turn
 from app.services.evaluation import compute_overall_score, evaluate_session
 from app.services.voice import synthesize_speech, transcribe_audio
@@ -337,14 +337,20 @@ async def _upsert_ai_quality_eval(
 
 
 async def _get_ai_quality_evals(session_id: uuid.UUID, db: AsyncSession) -> AIQualityEvalsOut:
-    record = await db.scalar(
-        select(AIQualityEval).where(
-            AIQualityEval.session_id == session_id,
-            AIQualityEval.eval_type == AIQualityEvalType.transcript_analysis,
+    rows = (
+        await db.scalars(
+            select(AIQualityEval).where(
+                AIQualityEval.session_id == session_id,
+                AIQualityEval.eval_type.in_(
+                    [AIQualityEvalType.transcript_analysis, AIQualityEvalType.customer_persona]
+                ),
+            )
         )
-    )
+    ).all()
+    by_type = {r.eval_type: AIQualityEvalOut.model_validate(r) for r in rows}
     return AIQualityEvalsOut(
-        transcript_analysis=AIQualityEvalOut.model_validate(record) if record else None
+        transcript_analysis=by_type.get(AIQualityEvalType.transcript_analysis),
+        customer_persona=by_type.get(AIQualityEvalType.customer_persona),
     )
 
 
@@ -378,6 +384,11 @@ async def run_ai_quality_evals(
         )
         await _upsert_ai_quality_eval(
             session.id, AIQualityEvalType.transcript_analysis, transcript_scores, transcript_summary, db
+        )
+
+        persona_scores, persona_summary = await run_customer_persona_eval(scenario, turns)
+        await _upsert_ai_quality_eval(
+            session.id, AIQualityEvalType.customer_persona, persona_scores, persona_summary, db
         )
     except RuntimeError as exc:
         raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)) from exc

@@ -260,11 +260,10 @@ async def run_transcript_analysis(
     scenario: Scenario, turns: list[Turn], evaluation: Evaluation, session: SimulationSession
 ) -> tuple[dict[str, Any], str]:
     """Audits the *Call Scorecard* (the rubric-based Evaluation Claude already produced for the
-    rep) for whether it accurately and completely reflects transcript-level signals — this does
-    not re-grade the rep independently. All metrics below are computed deterministically in code
-    (no LLM judgment, so no cost or flakiness); whether the scorecard *appropriately accounted
-    for* the core ones, and whether its objection-handling and framework-adherence assessments
-    are accurate, is judged by Claude against the actual transcript."""
+    rep) across three dimensions — NOT a re-grading of the rep. All transcript-level metrics
+    below are computed deterministically in code (no LLM judgment, so no cost or flakiness) and
+    given to Claude as ground truth; Claude only judges whether the scorecard represents them
+    (and the rep's tone/objectivity of feedback) accurately."""
     talk_time = compute_talk_time_ratio(turns)
     fillers = compute_filler_word_count(turns)
     call_duration = compute_call_duration(session)
@@ -277,59 +276,89 @@ async def run_transcript_analysis(
     speaking_pace = compute_speaking_pace(session, turns)
     talk_time_trend = compute_talk_time_trend(turns)
     scorecard_text = _build_scorecard_text(evaluation)
+    other_criteria = ", ".join(c["name"] for c in scenario.rubric_criteria) or "(none configured)"
 
     tool = {
         "name": "submit_transcript_analysis",
         "description": (
-            "Submit a single aggregate audit of the AI-generated Call Scorecard's accuracy and "
-            "completeness — NOT a fresh grading of the rep. Both fields are always required."
+            "Submit a 3-part audit of the AI-generated Call Scorecard's accuracy and "
+            "completeness — NOT a fresh grading of the rep. All 6 fields are always required, "
+            "even when a score is a perfect 100 — never omit one."
         ),
         "input_schema": {
             "type": "object",
             "properties": {
-                "accuracy_score": {
+                "metrics_accuracy_score": {
                     "type": "number",
                     "description": (
-                        "0-100 — overall, how accurately and completely does the scorecard reflect what "
-                        "actually happened in the transcript across talk-time balance, filler-word/"
-                        "fluency issues, objection handling, and (if a sales framework is configured) "
-                        "framework adherence? Weigh any factually wrong or misleading claims heavily; "
-                        "weigh omissions of context that wasn't very relevant lightly. Always include "
-                        "this field."
+                        "0-100 — how accurately and completely does the scorecard reflect the "
+                        "computed metrics below (talk-time balance, filler words, turn counts, "
+                        "response length)? Weigh factually wrong claims heavily; weigh omitted "
+                        "context that wasn't very relevant lightly. Always include this field."
                     ),
                 },
-                "notes": {
+                "metrics_accuracy_notes": {"type": "string"},
+                "tone_confidence_score": {
+                    "type": "number",
+                    "description": (
+                        "0-100 — based on the rep's actual word choice and phrasing in the "
+                        "transcript (hedging language like 'I think'/'maybe', filler, assertive "
+                        "vs. tentative statements — a TEXT-BASED PROXY, not real vocal/audio "
+                        "analysis, since no audio is available), does the scorecard's "
+                        "characterization of the rep's tone, confidence, and assertiveness match "
+                        "what the transcript actually shows? Always include this field."
+                    ),
+                },
+                "tone_confidence_notes": {
                     "type": "string",
                     "description": (
-                        "Explain the score: call out any specific inaccuracies or omissions found "
-                        "(or confirm the scorecard was accurate and complete). Always include this field."
+                        "State what tone/confidence you infer from the transcript's wording, and "
+                        "whether the scorecard's characterization matches it. Always include this "
+                        "field."
                     ),
                 },
+                "feedback_objectivity_score": {
+                    "type": "number",
+                    "description": (
+                        "0-100 — for the scenario's OTHER rubric criteria (i.e. everything besides "
+                        "raw metrics/tone — e.g. value reinforcement, discovery, closing), is the "
+                        "scorecard's feedback objective and evidence-backed (specific quotes or "
+                        "concrete moments from the transcript) rather than vague, generic, or "
+                        "unsupported? Always include this field."
+                    ),
+                },
+                "feedback_objectivity_notes": {"type": "string"},
             },
-            "required": ["accuracy_score", "notes"],
+            "required": [
+                "metrics_accuracy_score",
+                "metrics_accuracy_notes",
+                "tone_confidence_score",
+                "tone_confidence_notes",
+                "feedback_objectivity_score",
+                "feedback_objectivity_notes",
+            ],
         },
     }
 
     framework_line = (
-        f"Also check whether the scorecard's assessment reflects adherence to the "
-        f"{scenario.sales_framework} sales framework."
+        f"When judging feedback objectivity, also check whether the scorecard's framework-adherence "
+        f"commentary (the configured sales framework is {scenario.sales_framework}) is objective and "
+        f"evidence-backed, not just asserted."
         if scenario.sales_framework
-        else "No specific sales framework was configured for this scenario — skip framework scoring."
+        else ""
     )
     system_prompt = f"""You are auditing an AI-generated sales call "Call Scorecard" for accuracy and \
 completeness. You are NOT re-grading the sales rep yourself — you are checking whether the scorecard \
-below correctly and completely reflects what actually happened in the transcript, specifically \
-regarding talk-time balance, filler-word/fluency issues, and objection handling, and giving one \
-aggregate accuracy score covering all of it. {framework_line}
+below correctly and completely reflects what actually happened in the transcript, across three \
+dimensions: (1) the computed metrics, (2) the rep's tone/confidence as evident from their wording, \
+and (3) whether feedback on the scenario's other rubric criteria is objective and evidence-backed \
+rather than vague. {framework_line}
 
 COMPUTED METRICS (ground truth to check the scorecard against — do not recompute them):
 - Rep talk-time: {talk_time["rep_talk_time_pct"]}% of words spoken ({talk_time["rep_words"]} rep words vs \
 {talk_time["ai_words"]} customer words)
 - Filler words used by the rep: {fillers["total"]} total, {fillers["per_100_words"]} per 100 words \
 ({fillers["by_word"] or "none detected"})
-
-ADDITIONAL COMPUTED METRICS (context only, not separately scored — mention in your notes only if \
-directly relevant to something the scorecard got wrong or missed):
 - Call duration: {call_duration["seconds"]} seconds
 - Turns: {turn_counts["rep_turns"]} rep, {turn_counts["ai_turns"]} customer
 - Rep questions asked: {question_rate["questions_asked"]} ({question_rate["per_turn"]} per rep turn)
@@ -345,7 +374,7 @@ directly relevant to something the scorecard got wrong or missed):
 - Customer name usage: {"detected name '" + name_usage["customer_name_detected"] + "', used by rep: " + str(name_usage["used_by_rep"]) if name_usage["customer_name_detected"] else "no name reliably detected"}
 
 SCENARIO: {scenario.title}
-CONFIGURED OBJECTIONS: {", ".join(scenario.objections) or "none specified"}
+SCENARIO'S RUBRIC CRITERIA: {other_criteria}
 
 TRANSCRIPT:
 {_build_transcript(turns)}
@@ -367,8 +396,88 @@ CALL SCORECARD TO AUDIT (this is what the rep was actually shown — judge its a
         "customer_name_usage": name_usage,
         "speaking_pace": speaking_pace,
         "talk_time_trend": talk_time_trend,
-        "accuracy_score": result["accuracy_score"],
+        "metrics_accuracy_score": result["metrics_accuracy_score"],
+        "metrics_accuracy_notes": result["metrics_accuracy_notes"],
+        "tone_confidence_score": result["tone_confidence_score"],
+        "tone_confidence_notes": result["tone_confidence_notes"],
+        "feedback_objectivity_score": result["feedback_objectivity_score"],
+        "feedback_objectivity_notes": result["feedback_objectivity_notes"],
         "sales_framework": scenario.sales_framework,
-        "overall_score": result["accuracy_score"],
     }
-    return scores, result["notes"]
+    summary = " ".join(
+        [result["metrics_accuracy_notes"], result["tone_confidence_notes"], result["feedback_objectivity_notes"]]
+    )
+    return scores, summary
+
+
+async def run_customer_persona_eval(scenario: Scenario, turns: list[Turn]) -> tuple[dict[str, Any], str]:
+    """Grades the AI customer persona itself — NOT the rep or the scorecard — on whether it
+    stayed in character and actually raised the configured objections during the call."""
+    objection_coverage = compute_objection_coverage(scenario.objections, turns)
+
+    tool = {
+        "name": "submit_customer_persona_eval",
+        "description": (
+            "Submit an evaluation of the AI customer persona's fidelity to the scenario. Both "
+            "fields are always required, even when a score is a perfect 100 — never omit one."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "stayed_in_character_score": {
+                    "type": "number",
+                    "description": (
+                        "0-100 — did the AI customer ever break character, mention being an AI, "
+                        "coach the rep, or narrate stage directions? 100 means fully in character "
+                        "throughout. Always include this field."
+                    ),
+                },
+                "stayed_in_character_notes": {"type": "string"},
+                "raised_objections_score": {
+                    "type": "number",
+                    "description": (
+                        "0-100 — of the configured objections, how many did the AI customer "
+                        "actually raise naturally during the call (see the word-overlap-based "
+                        "count below as a rough signal, but judge from the actual transcript "
+                        "wording, since paraphrased objections can be missed by that heuristic)? "
+                        "100 means all configured objections were raised naturally. Always "
+                        "include this field."
+                    ),
+                },
+                "raised_objections_notes": {"type": "string"},
+            },
+            "required": [
+                "stayed_in_character_score",
+                "stayed_in_character_notes",
+                "raised_objections_score",
+                "raised_objections_notes",
+            ],
+        },
+    }
+
+    system_prompt = f"""You are an AI QA reviewer grading the *simulated customer persona* in this training \
+call transcript — NOT the sales rep. Judge only the "Customer" turns, on (1) whether it stayed fully in \
+character and (2) whether it actually raised the configured objections.
+
+SCENARIO: {scenario.title} ({scenario.call_type.value}, {scenario.difficulty.value} difficulty)
+CONFIGURED PERSONA: {scenario.persona_description}
+CONFIGURED OBJECTIONS THE PERSONA SHOULD RAISE: {", ".join(scenario.objections) or "none specified"}
+
+DETERMINISTIC OBJECTION-COVERAGE CHECK (word-overlap heuristic, a rough signal only — \
+{objection_coverage["raised_count"]}/{objection_coverage["configured_count"]} objections matched; \
+may miss heavily paraphrased ones): {objection_coverage["raised"] or "none matched"}
+
+TRANSCRIPT:
+{_build_transcript(turns)}"""
+
+    result = await _call_claude_judge(system_prompt, "Evaluate the AI customer persona now.", tool)
+
+    scores = {
+        "objection_coverage": objection_coverage,
+        "stayed_in_character_score": result["stayed_in_character_score"],
+        "stayed_in_character_notes": result["stayed_in_character_notes"],
+        "raised_objections_score": result["raised_objections_score"],
+        "raised_objections_notes": result["raised_objections_notes"],
+    }
+    summary = " ".join([result["stayed_in_character_notes"], result["raised_objections_notes"]])
+    return scores, summary

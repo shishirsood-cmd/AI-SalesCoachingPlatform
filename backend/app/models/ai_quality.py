@@ -10,6 +10,7 @@ from app.db.base_class import Base
 
 class AIQualityEvalType(str, enum.Enum):
     transcript_analysis = "transcript_analysis"
+    customer_persona = "customer_persona"
 
 
 class AIQualityEval(Base):
