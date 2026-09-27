@@ -219,8 +219,8 @@ async def _call_claude_judge(system_prompt: str, user_message: str, tool: dict[s
     for attempt in range(_MAX_JUDGE_ATTEMPTS):
         try:
             response = await client.messages.create(
-                model=settings.claude_model,
-                max_tokens=1200,
+                model=settings.claude_eval_model,
+                max_tokens=4096,
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_message}],
                 tools=[tool],

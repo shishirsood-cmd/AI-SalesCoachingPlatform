@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     max_upload_bytes: int = 20 * 1024 * 1024
     anthropic_api_key: str | None = None
     claude_model: str = "claude-sonnet-5"
+    claude_eval_model: str = "claude-opus-5"
     rag_top_k: int = 4
     deepgram_api_key: str | None = None
     elevenlabs_api_key: str | None = None
