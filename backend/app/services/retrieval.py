@@ -24,3 +24,15 @@ async def retrieve_relevant_chunks(
         )
     ).all()
     return [row[0] for row in rows]
+
+
+async def retrieve_chunks_for_turns(db: AsyncSession, org_id: uuid.UUID, queries: list[str]) -> list[str]:
+    """Union of the top-k chunks for each query, de-duplicated in first-seen order."""
+    seen: set[str] = set()
+    chunks: list[str] = []
+    for query in queries:
+        for chunk in await retrieve_relevant_chunks(db, org_id, query):
+            if chunk not in seen:
+                seen.add(chunk)
+                chunks.append(chunk)
+    return chunks

@@ -21,6 +21,7 @@ from app.services.ai_quality_evals import run_customer_persona_eval, run_transcr
 from app.services.call_metrics import compute_call_metrics
 from app.services.conversation import generate_ai_turn
 from app.services.evaluation import compute_overall_score, evaluate_session
+from app.services.retrieval import retrieve_chunks_for_turns
 from app.services.voice import synthesize_speech, transcribe_audio
 
 router = APIRouter(prefix="/sessions", tags=["sessions"])
@@ -66,7 +67,10 @@ async def _ensure_evaluation(
     if existing is not None:
         return existing
 
-    result = await evaluate_session(scenario, turns)
+    manual_context = await retrieve_chunks_for_turns(
+        db, session.org_id, [t.content for t in turns if t.speaker == Speaker.rep]
+    )
+    result = await evaluate_session(scenario, turns, manual_context)
     overall_score = compute_overall_score(scenario.rubric_criteria, result["criteria"])
     evaluation = Evaluation(
         session_id=session.id,

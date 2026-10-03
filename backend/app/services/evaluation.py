@@ -64,7 +64,12 @@ def _build_transcript(turns: list[Turn]) -> str:
     return "\n".join(lines)
 
 
-def _build_system_prompt(scenario: Scenario, turns: list[Turn]) -> str:
+def _build_system_prompt(scenario: Scenario, turns: list[Turn], manual_context: list[str]) -> str:
+    manual_block = (
+        "\n\n".join(manual_context)
+        if manual_context
+        else "(no product documentation is available for this organization)"
+    )
     criteria_desc = "\n".join(
         f"- {c['name']} (weight {c['weight']}%): {c.get('description', '')}"
         for c in scenario.rubric_criteria
@@ -80,12 +85,22 @@ CUSTOMER PERSONA: {scenario.persona_description}
 RUBRIC CRITERIA:
 {criteria_desc}
 
+PRODUCT MANUAL EXCERPTS (ground truth for this product). Use these to verify every product claim the \
+rep makes (pricing, features, tiers, policies, limits): credit accurate, specific use of them, and \
+penalize claims that contradict or go beyond them — quote the claim and what the manual actually says. \
+Where a rubric criterion asks the rep to use details from the product manual, grade it against these \
+excerpts. If no documentation is available, do not penalize or reward product-fact accuracy, and do \
+not assume what the product does:
+{manual_block}
+
 TRANSCRIPT:
 {_build_transcript(turns)}"""
 
 
-async def evaluate_session(scenario: Scenario, turns: list[Turn]) -> dict:
-    system_prompt = _build_system_prompt(scenario, turns)
+async def evaluate_session(
+    scenario: Scenario, turns: list[Turn], manual_context: list[str] | None = None
+) -> dict:
+    system_prompt = _build_system_prompt(scenario, turns, manual_context or [])
     client = get_client()
 
     try:
