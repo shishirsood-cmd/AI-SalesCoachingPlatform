@@ -117,6 +117,10 @@ async def _call_claude_judge(system_prompt: str, user_message: str, tool: dict[s
     )
 
 
+def _manual_block(manual_context: list[str]) -> str:
+    return "\n\n".join(manual_context) if manual_context else "(no product documentation is available for this organization)"
+
+
 def _format_call_metrics(call_metrics: dict[str, Any]) -> str:
     if not call_metrics:
         return "(not published on this scorecard)"
@@ -147,7 +151,11 @@ Areas for improvement: {"; ".join(evaluation.areas_for_improvement)}"""
 
 
 async def run_transcript_analysis(
-    scenario: Scenario, turns: list[Turn], evaluation: Evaluation, session: SimulationSession
+    scenario: Scenario,
+    turns: list[Turn],
+    evaluation: Evaluation,
+    session: SimulationSession,
+    manual_context: list[str],
 ) -> tuple[dict[str, Any], str]:
     """Audits the *Call Scorecard* (the rubric-based Evaluation Claude already produced for the
     rep) across three dimensions — NOT a re-grading of the rep. All transcript-level metrics
@@ -267,6 +275,13 @@ COMPUTED METRICS (ground truth to check the scorecard against — do not recompu
 SCENARIO: {scenario.title}
 SCENARIO'S RUBRIC CRITERIA: {other_criteria}
 
+PRODUCT MANUAL EXCERPTS (ground truth for this product). Use them to check every statement the \
+scorecard makes about product facts or about what the manual says: a scorecard claim that a rep's \
+product statement was right or wrong is only accurate if the excerpts support it, and a scorecard \
+claim about the manual's contents that the excerpts do not support is an inaccuracy. If no \
+documentation is available, do not penalize the scorecard for product-fact claims you cannot verify:
+{_manual_block(manual_context)}
+
 TRANSCRIPT:
 {_build_transcript(turns)}
 
@@ -301,7 +316,9 @@ CALL SCORECARD TO AUDIT (this is what the rep was actually shown — judge its a
     return scores, summary
 
 
-async def run_customer_persona_eval(scenario: Scenario, turns: list[Turn]) -> tuple[dict[str, Any], str]:
+async def run_customer_persona_eval(
+    scenario: Scenario, turns: list[Turn], manual_context: list[str]
+) -> tuple[dict[str, Any], str]:
     """Grades the AI customer persona itself — NOT the rep or the scorecard — on whether it
     stayed in character and actually raised the configured objections during the call."""
     objection_coverage = compute_objection_coverage(scenario.objections, turns)
@@ -357,6 +374,12 @@ CONFIGURED OBJECTIONS THE PERSONA SHOULD RAISE: {", ".join(scenario.objections) 
 DETERMINISTIC OBJECTION-COVERAGE CHECK (word-overlap heuristic, a rough signal only — \
 {objection_coverage["raised_count"]}/{objection_coverage["configured_count"]} objections matched; \
 may miss heavily paraphrased ones): {objection_coverage["raised"] or "none matched"}
+
+PRODUCT MANUAL EXCERPTS (the only product facts the persona was allowed to rely on; it was told \
+not to invent facts beyond them). If the Customer states product facts that contradict or go beyond \
+these excerpts, deduct from stayed_in_character_score and say so in its notes. If no documentation is \
+available, do not penalize product-fact statements you cannot verify:
+{_manual_block(manual_context)}
 
 TRANSCRIPT:
 {_build_transcript(turns)}"""

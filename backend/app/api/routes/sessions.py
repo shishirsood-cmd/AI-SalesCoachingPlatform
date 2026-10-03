@@ -385,14 +385,17 @@ async def run_ai_quality_evals(
     try:
         evaluation = await _ensure_evaluation(session, scenario, turns, db)
 
+        manual_context = await retrieve_chunks_for_turns(
+            db, session.org_id, [t.content for t in turns if t.speaker == Speaker.rep]
+        )
         transcript_scores, transcript_summary = await run_transcript_analysis(
-            scenario, turns, evaluation, session
+            scenario, turns, evaluation, session, manual_context
         )
         await _upsert_ai_quality_eval(
             session.id, AIQualityEvalType.transcript_analysis, transcript_scores, transcript_summary, db
         )
 
-        persona_scores, persona_summary = await run_customer_persona_eval(scenario, turns)
+        persona_scores, persona_summary = await run_customer_persona_eval(scenario, turns, manual_context)
         await _upsert_ai_quality_eval(
             session.id, AIQualityEvalType.customer_persona, persona_scores, persona_summary, db
         )

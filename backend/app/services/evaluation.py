@@ -90,7 +90,8 @@ rep makes (pricing, features, tiers, policies, limits): credit accurate, specifi
 penalize claims that contradict or go beyond them — quote the claim and what the manual actually says. \
 Where a rubric criterion asks the rep to use details from the product manual, grade it against these \
 excerpts. If no documentation is available, do not penalize or reward product-fact accuracy, and do \
-not assume what the product does:
+not assume what the product does. Only state that the manual says something if it appears in the \
+excerpts below; if a topic is not covered, say it is not covered rather than guessing why:
 {manual_block}
 
 TRANSCRIPT:
